@@ -8,7 +8,7 @@ This guide covers two things:
 Repository covered here:
 
 - `CultureBotAI/auto-term-catalog`
-- Local checkout: `/home/mark/gitrepos/auto-term-catalog`
+- Local checkout example: `~/gitrepos/auto-term-catalog`
 
 ## Current repo state
 
@@ -25,13 +25,11 @@ As of April 10, 2026, this repo is very minimal:
 
 That means the intern can install Codex and open the repo today, but Codex will be much more useful after the repo has a basic Python project scaffold.
 
-## Part 1: Install the local tools
-
 ## Why this guide exists
 
 This repo needs a repo-local guide because two separate things are true at once:
 
-- Marcin's ecosystem already has broader onboarding materials.
+- The broader CultureBotAI onboarding materials already exist.
 - This specific repo is not yet set up in a way that makes local, reproducible work easy for a new contributor.
 
 This guide is therefore intended as a supplement to broader CultureBotAI onboarding, not a replacement for it.
@@ -77,6 +75,8 @@ Without that setup, a repo quietly accumulates avoidable friction:
 Undergraduates often optimize for getting the script to run once. That is understandable, but the repo needs to optimize for something broader: repeatable, inspectable work that other people can run, review, and improve.
 
 That is why this guide pairs Codex onboarding with concrete repo-setup recommendations.
+
+## Part 1: Install the local tools
 
 ### Step 1: Install Homebrew
 
@@ -239,7 +239,7 @@ Why:
 - The code in this repo does not need 3.12-only or 3.13-only features.
 - A lightweight data-processing repo benefits more from stability than from chasing the newest interpreter.
 
-I would not start this repo on 3.9 or 3.10 now, and I would not make 3.13 the baseline for student onboarding unless the rest of Marcin's repos are already standardized there.
+I would not start this repo on 3.9 or 3.10 now, and I would not make 3.13 the baseline for student onboarding unless other CultureBotAI repos are already standardized there.
 
 ## Part 4: Recommended repo infrastructure
 
@@ -406,7 +406,7 @@ That usually means one of these:
 
 That is expected in the current repo, because the main script contains a hard-coded path:
 
-- `/Users/lukewang/Downloads/chemical_utilization_cborg_gpt5_20250819_113045.yaml`
+- `~/Downloads/chemical_utilization_cborg_gpt5_20250819_113045.yaml`
 
 This should be removed before onboarding someone else.
 
