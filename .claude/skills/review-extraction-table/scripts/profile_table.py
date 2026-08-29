@@ -71,6 +71,15 @@ def has(series: pd.Series, rx: re.Pattern) -> pd.Series:
     return series.apply(lambda x: bool(rx.search(x)))
 
 
+STEREO_RE = re.compile(r"(?:^|[\s,/-])\(?(DL|LL|DD|dl|ll|dd|[DLdl]|RS|[RS]|\+|meso|cis|trans|alpha|beta|α|β)\)?(?=-)")
+
+
+def stereo_prefixes(x: str) -> set[str]:
+    """Stereo/configuration prefixes in a chemical name, normalised (d→D, l→L, α→alpha …)."""
+    norm = {"d": "D", "l": "L", "dl": "DL", "ll": "LL", "dd": "DD", "α": "alpha", "β": "beta"}
+    return {norm.get(m, m) for m in STEREO_RE.findall(x)}
+
+
 def tokens(x: str) -> set[str]:
     return {t for t in re.split(r"[^a-z0-9]+", x.lower()) if len(t) > 1}
 
@@ -395,6 +404,20 @@ def main() -> int:
         nov = lex[ov][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
         P(f"\n**No word overlap between label and kg_name** ({len(nov)} unique; top {args.top}) — formulas and true synonyms are fine, look for meaning changes:\n")
         P(md_table(nov, args.top))
+        # stereo / configuration prefix differs while the stem is shared (d-glucose -> L-glucose, l-arabinose -> D-arabinose)
+        lex2 = df[grounded & df[R["match_type"]].isin(["name", "synonym"])]
+        st = []
+        for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]]):
+            pl, pk = stereo_prefixes(l), stereo_prefixes(k)
+            if pl and pk and pl != pk and (tokens(l) & tokens(k)):
+                st.append(True)
+            else:
+                st.append(False)
+        stdf = lex2[st][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
+        P(f"\n**Stereo/configuration prefix differs between label and kg_name** ({len(stdf)} unique) — D/L, R/S, cis/trans, α/β flips change the compound (`l-arabinose`→D-arabinose); a label with *no* prefix mapped to a specific enantiomer is listed under no-overlap above, not here:\n")
+        P(md_table(stdf, args.top))
+        if len(stdf):
+            flags.append(f"{len(stdf)} label/kg_name pairs differ in stereo prefix (D/L, R/S, α/β…) — likely wrong enantiomer/isomer")
     if R["kg_category"] and kind_col and R["grounded_id"]:
         exp = {"chemical": "ChemicalEntity|ChemicalSubstance|Molecule|Macromolecule", "taxon_candidate": "OrganismTaxon", "phenotype_observation": "OntologyClass", "strain": "OrganismTaxon|strain"}
         mm = []
