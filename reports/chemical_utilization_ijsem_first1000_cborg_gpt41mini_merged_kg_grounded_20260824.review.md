@@ -499,6 +499,25 @@ _Precision proxies. Each table is a review queue, not a verdict._
 | polysaccharides            | polysaccharide                 | CHEBI:18154   | synonym      |      1 |
 
 
+**Stereo/configuration prefix differs between label and kg_name** (0 unique) — D/L, R/S (incl. `(2R,3S)`), (+)/(−), cis/trans/E/Z, α/β (anomeric *or* positional) flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate):
+
+_(none)_
+
+
+**Stereo prefix on one side only** (8 unique). Generic→specific (`maltose`→D-maltose) is usually acceptable; specific→generic (`d-lactose`→lactose) means the grounding dropped a descriptor the extractor captured — check:
+
+| label                | kg_name                           | grounded_id   | match_type   | direction                                        |   rows |
+|:---------------------|:----------------------------------|:--------------|:-------------|:-------------------------------------------------|-------:|
+| maltose              | D-maltose                         | CHEBI:17306   | synonym      | label generic → kg specific                      |     18 |
+| amino acids          | alpha-amino acid                  | CHEBI:33704   | synonym      | label generic → kg specific                      |      8 |
+| alanine              | dl-alanine                        | CHEBI:16449   | synonym      | label generic → kg specific                      |      4 |
+| fructose-6-phosphate | beta-D-fructofuranose 6-phosphate | CHEBI:16084   | synonym      | label generic → kg specific                      |      3 |
+| adonitol             | D-Adonitol                        | CHEBI:15963   | synonym      | label generic → kg specific                      |      1 |
+| d-lactose            | lactose                           | CHEBI:17716   | synonym      | label specific → kg generic (descriptor dropped) |      2 |
+| glycyl-l-proline     | glycine-proline                   | CHEBI:70744   | synonym      | label specific → kg generic (descriptor dropped) |      2 |
+| d-melibiose          | melibiose                         | CHEBI:28053   | synonym      | label specific → kg generic (descriptor dropped) |      1 |
+
+
 **kind / kg_category mismatch** (0 unique):
 
 _(none)_
