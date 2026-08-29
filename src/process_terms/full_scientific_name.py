@@ -13,7 +13,7 @@ paper discusses. Nothing links the two, so the link is inferred from the strain 
                             the same document, or (`preceding_binomial_genus`) if at least its
                             genus occurs among the document's study_taxa. `Genus sp. [[X]]`
                             yields `Genus sp. X` (`preceding_genus_sp`).
-  2. sp_nov              — `Genus species sp./subsp./comb. nov. … (type strain(s)[:] [[X]]`,
+  2. sp_nov              — `Genus species sp./subsp./comb./nom. nov. … (type strain(s)[:] [[X]]`,
                             `Genus species (type strain, [[X]]`, or `strain [[X]] … Genus species
                             sp. nov.` within one context snippet with no competing strain
                             designation in between. The binomial is validated against the
@@ -24,7 +24,10 @@ paper discusses. Nothing links the two, so the link is inferred from the strain 
                             (`…yangense is proposed. The type strain is [[X]]`). The document's
                             *novel* taxa (study_taxa rows whose own context reads
                             `[[Genus species]] sp. nov.`) are suffix-matched against the cut
-                            fragment; if the document has a single novel taxon it is used directly.
+                            fragment; if the document has a single novel taxon it is used directly,
+                            provided nothing before the mention names another taxon (no binomial,
+                            abbreviation, `… nov.` or `type strain of`) and the label itself is not
+                            a binomial.
   4. equivalence         — the mention is an `=`-linked synonym of another designation in the
                             same document (`COJ-58T (=[[KACC 22108T]]`) whose name was resolved
                             by an earlier rule; iterated so chains resolve.
@@ -61,7 +64,9 @@ TYPE_STRAIN_MENTION = re.compile(
 NOVEL_TAXON_CTX = re.compile(r"\]\](?: f\.a\.,?)?(?: gen\. nov\.,?)? sp\. nov\.")
 CUT_FRAGMENT = re.compile(r"^\.\.\.(\S*?)(?: f\.a\.,?)?(?: gen\. nov\.,?)? sp\. nov\.|^\.\.\.(\S+) is proposed")
 MENTION = re.compile(r"\[\[(.+?)\]\]")
-PRECEDING = re.compile(rf"({BINOMIAL}|{ABBREV})(?: corrig\.)?[,'’]?\s+(?:strain\s+)?\[\[")
+# `Genus species [[X]]`, `'Genus species' [[X]]`, `Genus species strain [[X]]`. A comma (`as H. floricola, strain
+# [[X]]`) means the binomial is a comparator, not the strain's species, so it is deliberately not accepted.
+PRECEDING = re.compile(rf"({BINOMIAL}|{ABBREV})(?: corrig\.)?['’]?\s+(?:strain\s+)?\[\[")
 GENUS_SP = re.compile(r"([A-Z][a-z]{3,}) sp\.\s+(?:strain\s+)?\[\[")
 NOV = r"(?: gen\. nov\.,?)?(?: (?:sp|subsp|comb|nom)\. nov\.)"
 SP_NOV_BEFORE = re.compile(
@@ -187,10 +192,9 @@ def validate_binomial(cand: str, full: set[str], abbrev: dict[str, str]) -> str:
         return hit
     if full:
         # fuzzy: same genus and species epithets within edit distance 2 (typo tolerance)
-        for t in full:
-            tg, ts = t.split(" ")[0], t.split(" ")[1]
-            if tg == genus and _lev(ts, species) <= 2:
-                return t
+        near = sorted((_lev(t.split(" ")[1], species), t) for t in full if t.split(" ")[0] == genus)
+        if near and near[0][0] <= 2:
+            return near[0][1]
         # genus known in this document -> accept the candidate as spelled
         if genus in {t.split(" ")[0] for t in full}:
             return cand
@@ -289,7 +293,11 @@ def main() -> int:
     with open(args.table, encoding="utf-8") as fh:
         header = fh.readline()
     sep = "\t" if header.count("\t") >= header.count(",") else ","
-    df = pd.read_csv(args.table, sep=sep, dtype=str, keep_default_na=False)
+    try:
+        df = pd.read_csv(args.table, sep=sep, dtype=str, keep_default_na=False)
+    except pd.errors.EmptyDataError:
+        print(f"error: {args.table} is empty", file=sys.stderr)
+        return 1
     out = add_full_names(df)
 
     st = out[out["field"] == "strains"]
@@ -306,7 +314,7 @@ def main() -> int:
         if len(labs) < 2:
             continue
         ctx = " ".join(df.loc[df["doc"] == doc, "context"])
-        linked = all(any(re.search(rf"{re.escape(a)}\s*\(?=|=\s*\(?\[?\[?{re.escape(a)}", ctx) for a in (l,)) for l in labs)
+        linked = all(re.search(rf"{re.escape(l)}\s*\(?=|=\s*\(?\[?\[?{re.escape(l)}", ctx) for l in labs)
         if not linked:
             print(f"  QC: doc {doc}: {taxon} assigned to {len(labs)} T-strains not '='-linked: {', '.join(labs)}", file=sys.stderr)
 
