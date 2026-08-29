@@ -10,18 +10,26 @@ Repository covered here:
 - `CultureBotAI/auto-term-catalog`
 - Local checkout example: `~/gitrepos/auto-term-catalog`
 
+> **Platform note:** Parts 1 and 4 are written for **macOS** (Homebrew, `~/.zprofile`, `xcode-select`).
+> On Windows or Linux, use [shell-guide.md](shell-guide.md) for the terminal, Git, Node (nodejs.org LTS) and
+> Python prerequisites, then rejoin this guide at Step 4. Everything from Part 2 onward is platform-neutral.
+
 ## Current repo state
 
-As of April 10, 2026, this repo is very minimal:
+As of August 28, 2026 the repo contains:
+
+- `src/process_terms/auto_terms_table.py` — the original OntoGPT-YAML → CSV script. It still has a hard-coded input path pointing at one user's Downloads folder and writes its output to the current directory.
+- `.claude/skills/review-extraction-table/` — a Claude Code skill (`SKILL.md`, `scripts/profile_table.py`, `requirements.txt`) that profiles an extraction + KG-grounding table for structure, content and QC. This is the tool an intern is most likely to run first.
+- `data/` — extraction tables (currently the IJSEM first-1000 chemical_utilization table), and `reports/` — generated review reports.
+- `docs/shell-guide.md` — cross-platform terminal/Git/Python prerequisites.
+- `.gitignore` (`.DS_Store`, `__pycache__/`, `reports/*.tsv`).
+
+Still missing:
 
 - `README.md` is one sentence.
-- There is no `pyproject.toml`.
-- There is no pinned Python version.
-- There is no lockfile.
-- There are no tests.
-- There is no CI.
-- The main script is `src/process_terms/auto_terms_table.py`.
-- That script has a hard-coded local file path pointing at one user's Downloads folder.
+- No `pyproject.toml`, no pinned Python version (`.python-version`), no lockfile.
+- No tests, no CI (`.github/` is empty).
+- No `argparse` CLI for the original script.
 
 That means the intern can install Codex and open the repo today, but Codex will be much more useful after the repo has a basic Python project scaffold.
 
@@ -80,7 +88,7 @@ That is why this guide pairs Codex onboarding with concrete repo-setup recommend
 
 ### Step 1: Install Homebrew
 
-Official Homebrew install command:
+Official Homebrew install command (copy it from https://brew.sh/ — this line runs a remote script as your user, so only ever take it from brew.sh itself, never from a chat message or forum post):
 
 ```bash
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -112,7 +120,7 @@ brew --version
 
 ### Step 2: Install Node.js
 
-Codex is distributed as an npm package, so the machine needs Node and npm.
+Codex is distributed as an npm package, so the machine needs Node and npm. Use a current **LTS** release (the package declares `node >= 16`; `docs/shell-guide.md` asks for 18+ — Homebrew's `node` satisfies both).
 
 Install with Homebrew:
 
@@ -149,7 +157,13 @@ Install Codex globally with npm:
 npm install -g @openai/codex
 ```
 
-Official references:
+Alternative that skips Node entirely (Homebrew cask):
+
+```bash
+brew install --cask codex
+```
+
+Official references (the first URL redirects to the current docs host):
 
 - Codex CLI docs: https://developers.openai.com/codex/cli
 - Codex package README: https://github.com/openai/codex
@@ -174,7 +188,7 @@ Then choose:
 
 Use the intern's Berkeley Lab email identity if that account has been provisioned in the Berkeley Lab ChatGPT workspace.
 
-Official reference:
+Official reference (help-center article; open it in a browser — it describes Codex in ChatGPT generally, the CLI login is the `Sign in with ChatGPT` option above):
 
 - https://help.openai.com/en/articles/11369540-codex-in-chatgpt
 
@@ -196,14 +210,14 @@ codex
 
 If it starts normally and does not ask for an API key, that is the desired path.
 
-If the machine was previously configured with an API key, switch away from that:
+If the machine was previously configured with an API key, switch away from that. `codex logout` clears ChatGPT auth but does **not** remove an exported `OPENAI_API_KEY`, which Codex will keep using:
 
 ```bash
+env | grep OPENAI_API_KEY          # if this prints anything, remove it from ~/.zprofile / ~/.zshrc
+unset OPENAI_API_KEY
 codex logout
-codex
+codex login                        # choose "Sign in with ChatGPT"
 ```
-
-Then sign in again with ChatGPT.
 
 ## Part 2: Clone and open the target repo
 
@@ -234,31 +248,30 @@ Recommendation: use Python `3.11`.
 
 Why:
 
-- This repo currently depends only on `pandas` and `PyYAML`, both of which are very stable on 3.11.
+- This repo currently depends on `pandas` and `PyYAML` (original script) plus `tabulate` (review skill, see `.claude/skills/review-extraction-table/requirements.txt`), all very stable on 3.11.
 - Python 3.11 is conservative enough for student onboarding and broad package compatibility.
 - The code in this repo does not need 3.12-only or 3.13-only features.
 - A lightweight data-processing repo benefits more from stability than from chasing the newest interpreter.
 
-I would not start this repo on 3.9 or 3.10 now, and I would not make 3.13 the baseline for student onboarding unless other CultureBotAI repos are already standardized there.
+Team recommendation: do not start this repo on 3.9 or 3.10, and do not make 3.13 the baseline for student onboarding unless other CultureBotAI repos standardize there first. The cross-repo conventions discussion is [CultureBotAI/KG-Microbe-search#8](https://github.com/CultureBotAI/KG-Microbe-search/issues/8); it takes precedence over this section if they diverge.
 
 ## Part 4: Recommended repo infrastructure
 
 Recommendation: keep the repo simple and use `uv`, not Poetry.
 
-Why `uv`:
+Why `uv` (team preference, not a hard rule):
 
 - Fast install and environment creation.
-- Simple lockfile and dependency workflow.
+- One lockfile (`uv.lock`) and a small command surface.
 - Good fit for small script-heavy repos.
-- Easier for undergrads than a more opinionated packaging stack.
+- Fewer concepts for a new contributor to learn than a full packaging stack.
 
-### Minimum baseline I recommend
+### Minimum baseline
 
 Add these files:
 
 - `pyproject.toml`
 - `.python-version`
-- `.gitignore`
 - `.github/workflows/ci.yml`
 - `tests/test_auto_terms_table.py`
 
@@ -274,6 +287,7 @@ Runtime:
 
 - `pandas`
 - `pyyaml`
+- `tabulate`
 
 Dev:
 
@@ -288,22 +302,28 @@ Install `uv`:
 brew install uv
 ```
 
-Create the project environment:
+Create the project (this writes `pyproject.toml` and `.python-version`; `uv add` refuses to run without them):
 
 ```bash
 uv python install 3.11
-uv venv --python 3.11
-source .venv/bin/activate
+uv init --python 3.11 --no-workspace --name auto-term-catalog
 ```
 
 Add dependencies:
 
 ```bash
-uv add pandas pyyaml
+uv add pandas pyyaml tabulate
 uv add --dev pytest ruff
 ```
 
-Run the script:
+Run the review skill's profiler on the checked-in table (works today):
+
+```bash
+uv run python .claude/skills/review-extraction-table/scripts/profile_table.py \
+    data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv
+```
+
+Run the original script — **this fails until the hard-coded path in Part 5 is fixed**:
 
 ```bash
 uv run python src/process_terms/auto_terms_table.py
@@ -366,9 +386,7 @@ That is enough structure for Codex to help reliably without overengineering the 
 6. Install `uv`.
 7. Create a Python 3.11 virtual environment.
 8. Ask Codex to scaffold:
-   - `pyproject.toml`
-   - `.python-version`
-   - `.gitignore`
+   - `pyproject.toml` / `.python-version` (via `uv init`, see Part 4)
    - `tests/`
    - `argparse`-based CLI
 9. Open a PR that only does repo scaffolding and removes hard-coded local paths.
@@ -388,9 +406,11 @@ Node was not installed correctly or the shell needs to be restarted.
 Check:
 
 ```bash
-npm bin -g
+npm prefix -g            # global prefix; the binary lives in $(npm prefix -g)/bin
 npm list -g @openai/codex
 ```
+
+(`npm bin -g` was removed in npm 9 and errors on current npm.)
 
 Then open a new shell.
 
@@ -408,7 +428,7 @@ That is expected in the current repo, because the main script contains a hard-co
 
 - `~/Downloads/chemical_utilization_cborg_gpt5_20250819_113045.yaml`
 
-This should be removed before onboarding someone else.
+This should be removed before onboarding someone else. The review skill (`.claude/skills/review-extraction-table/`) has no such problem and is the safer first thing to run.
 
 ## Sources
 
