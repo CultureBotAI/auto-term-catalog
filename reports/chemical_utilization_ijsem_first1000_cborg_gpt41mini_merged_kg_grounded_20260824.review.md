@@ -414,8 +414,257 @@ Full catalog written to `reports/chemical_utilization_ijsem_first1000_cborg_gpt4
 
 
 
-## 5. Flags
+## 6. Extraction quality (all rows unless stated)
+
+
+### 6a. False-positive candidates (grounded, but suspicious)
+
+
+_Precision proxies. Each table is a review queue, not a verdict._
+
+
+**Synonym matches on 1–2-character labels** (7 unique) — element symbols vs one-letter amino-acid codes collide here:
+
+| label   | kg_name         | grounded_id   |
+|:--------|:----------------|:--------------|
+| H2      | dihydrogen      | CHEBI:18276   |
+| N2      | dinitrogen      | CHEBI:17997   |
+| CO      | carbon monoxide | CHEBI:17245   |
+| Ca      | calcium atom    | CHEBI:22984   |
+| K       | lysine          | CHEBI:25094   |
+| Si      | silicon atom    | CHEBI:27573   |
+| O2      | dioxygen        | CHEBI:15379   |
+
+
+**No word overlap between label and kg_name** (87 unique; top 30) — formulas and true synonyms are fine, look for meaning changes:
+
+| label                      | kg_name                        | grounded_id   | match_type   |   rows |
+|:---------------------------|:-------------------------------|:--------------|:-------------|-------:|
+| thiosulphate               | thiosulfate                    | CHEBI:16094   | synonym      |     18 |
+| NaCl                       | 1% sodium chloride             | CHEBI:26710   | synonym      |     16 |
+| nitrogen                   | dinitrogen                     | CHEBI:17997   | synonym      |     12 |
+| oxygen                     | dioxygen                       | CHEBI:15379   | synonym      |     11 |
+| sulphate                   | sulfate                        | CHEBI:16189   | synonym      |     10 |
+| aesculin                   | esculin                        | CHEBI:4853    | synonym      |      9 |
+| sulphite                   | sulfite                        | CHEBI:17359   | synonym      |      8 |
+| d-glucose                  | D-fructose                     | CHEBI:17634   | synonym      |      7 |
+| siderophores               | siderophore                    | CHEBI:26672   | synonym      |      6 |
+| 1,2-propanediol            | 1,2-propandiol                 | CHEBI:16997   | synonym      |      5 |
+| Fe(III)                    | ferric iron                    | CHEBI:29034   | synonym      |      5 |
+| ribitol                    | D-Adonitol                     | CHEBI:15963   | synonym      |      4 |
+| sulphide                   | sulfide                        | CHEBI:15138   | synonym      |      4 |
+| orthovanadate              | vanadate                       | CHEBI:46442   | synonym      |      3 |
+| metals                     | metal atom                     | CHEBI:33521   | synonym      |      3 |
+| molecular oxygen           | dioxygen                       | CHEBI:15379   | synonym      |      3 |
+| molecular hydrogen         | dihydrogen                     | CHEBI:18276   | synonym      |      2 |
+| acetol                     | hydroxyacetone                 | CHEBI:27957   | synonym      |      2 |
+| alkanes                    | alkane                         | CHEBI:18310   | synonym      |      2 |
+| antibiotics                | antimicrobial agent            | CHEBI:33281   | synonym      |      2 |
+| aromatic hydrocarbons      | arene                          | CHEBI:33658   | synonym      |      2 |
+| carbohydrates              | carbohydrate                   | CHEBI:16646   | synonym      |      2 |
+| ubiquinone-10              | coenzyme Q10                   | CHEBI:46245   | synonym      |      2 |
+| dimethylsulfoniopropionate | S,S-dimethyl-beta-propiothetin | CHEBI:16457   | synonym      |      2 |
+| propane-1,2-diol           | 1,2-propandiol                 | CHEBI:16997   | synonym      |      2 |
+| monomethylamine            | methylamine                    | CHEBI:16830   | synonym      |      2 |
+| NH4Cl                      | ammonium chloride              | CHEBI:31206   | synonym      |      2 |
+| MgCl2                      | magnesium dichloride           | CHEBI:6636    | synonym      |      2 |
+| peptides                   | peptide                        | CHEBI:16670   | synonym      |      1 |
+| polysaccharides            | polysaccharide                 | CHEBI:18154   | synonym      |      1 |
+
+
+**kind / kg_category mismatch** (0 unique):
+
+_(none)_
+
+
+- Chemical rows whose *label* carries a value/concentration (e.g. `12.5% NaCl`): **414** — value belongs in `chemical_level_type`/`context`, not the term label
+
+
+### 6b. Noise: labels that are not real, specific terms
+
+| noise type                            |   rows |   of which grounded | examples                                                                                                                                                                                                           |
+|:--------------------------------------|-------:|--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| generic class phrase                  |     68 |                  35 | `amino acids`, `nutrient agar`, `carbon sources`, `aromatic compounds`, `sea salts`, `mycolic acids`                                                                                                               |
+| trait / assay phrase in chemical slot |     64 |                  23 | `catalase`, `oxidase`, `indole-3-acetic acid`, `H2/CO2`, `urease`, `indole`                                                                                                                                        |
+| growth medium in chemical slot        |    147 |                  46 | `yeast extract`, `casein`, `tryptone`, `R2A agar`, `tryptic soy agar`, `nutrient agar`                                                                                                                             |
+| value/unit only                       |      0 |                   0 |                                                                                                                                                                                                                    |
+| placeholder                           |     13 |                   0 | `<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`                                                                                                         |
+| ≥6 words                              |     92 |                  85 | `brain heart infusion agar supplemented w`, `temperature range 25 and 42 °C`, `temperature range 25 and 20 °C`, `0.5 % (w/v; optimum, 0 %) NaCl`, `temperature range 20 to 37 °C`, `temperature range -2 to 32 °C` |
+
+
+- Rows matching ≥1 noise pattern: **372 / 14,982 (2.5%)**
+
+
+### 6c. Incomplete or truncated extraction (recall proxies)
+
+
+_The table has no source text, so these are proxies from `context` snippets; confirm against abstracts._
+
+
+- Rows per document: min 2, p10 7, median 14, p90 24, max 59
+
+- Documents with ≤3 rows (possible failed/empty extraction): **11** 126, 159, 171, 227, 288, 351, 372, 402, 429, 602
+
+
+**Documents with no rows per field:**
+
+| field                       |   docs_with_0_rows |   pct_docs |
+|:----------------------------|-------------------:|-----------:|
+| chemical_utilization_object |                389 |       38.9 |
+| pH_observation              |                541 |       54.1 |
+| strains                     |                  7 |        0.7 |
+| study_taxa                  |                  0 |        0   |
+| temperature_observation     |                493 |       49.3 |
+
+
+**Field cue present in other rows' context, but field empty** (strong truncation signal):
+
+| field                       |   docs with cue in context but 0 rows | examples                              |
+|:----------------------------|--------------------------------------:|:--------------------------------------|
+| temperature_observation     |                                     8 | 144, 15, 357, 553, 61, 66, 725, 878   |
+| pH_observation              |                                    15 | 137, 144, 15, 191, 329, 408, 419, 61  |
+| chemical_utilization_object |                                    61 | 100, 111, 123, 13, 139, 179, 203, 214 |
+
+
+- Mentions whose `[[…]]` boundary cuts inside a token (partial-span extraction): **691**
+
+| label                     | snippet                                                                         |
+|:--------------------------|:--------------------------------------------------------------------------------|
+| Dysgonomonas              | hagoides and (iii) Pseudo[[dysgonomonas]] gen. nov. represented by              |
+| Coprococcus comes         | Allocoprococcus, as Allo[[coprococcus comes]] gen. nov., comb. nov. Al          |
+| KXB24                     | aminicola sp. nov., with [[KXB24]]T (=NCPPB 4802T=LMG 33887                     |
+| DNF00809                  | vel bacterium designated [[DNF00809]]T using biochemical, geno                  |
+| Qipengyuania triglochinis | hinis sp. nov. and Alteri[[qipengyuania triglochinis]] sp. nov. are proposed. T |
+| Micromonospora            | in a distinct lineage of [[Micromonospora]]ceae, separate from the f            |
+| Vibrio                    | ember of the genus Bdello[[vibrio]] based on its 16S rRNA ge                    |
+| 22-AL-CL-001              | on where the type strain [[22-AL-CL-001]]T (NCPPB 4760T=LMG 33363T              |
+| Fodinibius salipaludis    | e reclassification of Ali[[fodinibius salipaludis]] as Fodinibius salipaludi    |
+| CGMCC 2.7770              | v. is proposed (holotype [[CGMCC 2.7770]]T).                                    |
+| Chlamydia                 | The [[Chlamydia]]ceae is a family of stric                                      |
+| chitin                    | A novel [[chitin]]olytic bacterium, designa                                     |
+| CNCM I-4541               | osed. The type strain is [[CNCM I-4541]]T (=CIP 112513T=JCM 39552               |
+| Lactococcus               | for which the name Pseudo[[lactococcus]] is proposed. Three lacti               |
+| pH optimum 7.0            | at pH values of 5.0-11.0[[ (optimum pH 7.0]]).                                  |
+
+- Rows with empty `original_spans` (mention not located in text): **314**
+
+
+### 6d. METPO / vocabulary gaps
+
+
+**Relationship types used** (23):
+
+| chemical_relationship               |   rows | metpo_id      |
+|:------------------------------------|-------:|:--------------|
+| has range temperature observation   |    558 | METPO:2000055 |
+| has range pH observation            |    555 | METPO:2000503 |
+| has optimum temperature observation |    506 | METPO:2000053 |
+| uses_for_growth                     |    470 | METPO:2000012 |
+| has optimum pH observation          |    407 | METPO:2000501 |
+| tolerates                           |    366 | METPO:2000064 |
+| produces                            |    332 | METPO:2000202 |
+| has range NaCl observation          |    307 | METPO:2000509 |
+| does_not_use_for_growth             |    226 | METPO:2000038 |
+| uses_as_carbon_source               |    172 | METPO:2000006 |
+| requires_for_growth                 |    156 | METPO:2000018 |
+| has optimum NaCl observation        |    145 | METPO:2000507 |
+| has growth NaCl observation         |    124 | METPO:2000508 |
+| hydrolyzes                          |     92 | METPO:2000013 |
+| has growth temperature observation  |     80 | METPO:2000054 |
+| degrades                            |     72 | METPO:2000007 |
+| ferments                            |     65 | METPO:2000011 |
+| reduces                             |     64 | METPO:2000017 |
+| uses_as_electron_donor              |     54 | METPO:2000009 |
+| uses_as_electron_acceptor           |     45 | METPO:2000008 |
+| has growth pH observation           |     41 | METPO:2000502 |
+| uses_as_energy_source               |     37 | METPO:2000010 |
+| oxidizes                            |     12 | METPO:2000016 |
+
+
+**Relationship types with no METPO id** (0) — candidate new METPO relations:
+
+_(none)_
+
+
+**Ungrounded trait-like labels** (16 unique; top 30) — phenotypes/enzymes extracted as chemicals; candidates for METPO classes or for schema guidance:
+
+| label                                           |   rows |   n_docs |
+|:------------------------------------------------|-------:|---------:|
+| oxidase                                         |      9 |        5 |
+| H2/CO2                                          |      7 |        5 |
+| urease                                          |      6 |        5 |
+| indole acetic acid                              |      5 |        3 |
+| 1-aminocyclopropane-1-carboxylic acid deaminase |      2 |        1 |
+| catalase activity                               |      2 |        1 |
+| β-glucosidase                                   |      2 |        1 |
+| β-glucuronidase                                 |      2 |        2 |
+| 1-aminocyclopropane-1-carboxylate deaminase     |      1 |        1 |
+| nitrogenase                                     |      1 |        1 |
+| protease                                        |      1 |        1 |
+| trypticase                                      |      1 |        1 |
+| trypticase soy agar                             |      1 |        1 |
+| urease substrate                                |      1 |        1 |
+| α-arabinosidase activity                        |      1 |        1 |
+| α-glucosidase                                   |      1 |        1 |
+
+
+**Ungrounded specific chemicals seen in ≥2 rows** (24) — CHEBI synonym / lexical-index gaps:
+
+| label                                      |   rows |
+|:-------------------------------------------|-------:|
+| meso-diaminopimelic acid                   |     14 |
+| ll-diaminopimelic acid                     |      7 |
+| dl-lactate                                 |      7 |
+| methyl-β-d-glucopyranoside                 |      5 |
+| carotenoid-type pigments                   |      3 |
+| tartaric acid                              |      3 |
+| soluble starch                             |      3 |
+| poly(ε-caprolactone)                       |      2 |
+| coral mucus                                |      2 |
+| d,l-lactate                                |      2 |
+| phosphatidylethanolamine (PE)              |      2 |
+| p-hydroxy-phenylacetic acid                |      2 |
+| natural rubber                             |      2 |
+| dl-lactic acid                             |      2 |
+| actidione                                  |      2 |
+| multiple antibiotics                       |      2 |
+| mono- and oligosaccharides                 |      2 |
+| fish gut fluid                             |      2 |
+| methyl-α-d-glucopyranoside                 |      2 |
+| amoxicillin-clavulanic acid                |      2 |
+| poly(butylene succinate-co-adipate) (PBSA) |      2 |
+| α-hydroxy butyric acid                     |      2 |
+| N-acetyl-glucosamine                       |      2 |
+| soluble phosphorus                         |      2 |
+
+
+### 6e. Process and prompt-instruction gaps
+
+
+_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm._
+
+
+- Placeholder spellings: **6** variants (`<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`) — prompt should say *omit* rather than emit a placeholder, or fix one spelling
+
+- Fields present: ['chemical_utilization_object', 'pH_observation', 'strains', 'study_taxa', 'temperature_observation']; expected-but-absent: none; unexpected: none
+
+- Labels assigned to more than one `kind` across documents: **15** (inconsistent typing) e.g. `(unspecified)`, `Alt4`, `Burkholderiaceae bacterium PBA`, `CGMCC 1.18055T`, `CGMCC 1.18060T`, `Candida aff. naeodendra/diddensiae Y151`, `Candida sp. GE19S08`, `KCTC 25793T`
+
+- Provenance columns (model/prompt/schema/version): **none** — add them upstream so results can be tied to a run
+
+- Labels differing only by case: **1** (no normalization step) e.g. `[not specified]`
+
+
+
+## 7. Flags
 
 - ⚠️ field `strains` is only 0.5% grounded (5,950 ungrounded rows)
 - ⚠️ kg_edge_count not populated for all 2,147 rows with match_type=kg_microbe_metpo (edge stats missing for this grounding path, not necessarily orphan nodes)
 - ⚠️ 13 rows (all rows, grounded or not) with placeholder labels (unspecified/unknown/NA)
+- ⚠️ 7 distinct 1–2-char labels grounded by synonym (check for symbol/amino-acid collisions, e.g. K→lysine)
+- ⚠️ 8 docs mention temperature_observation cues in context but have no temperature_observation row
+- ⚠️ 15 docs mention pH_observation cues in context but have no pH_observation row
+- ⚠️ 61 docs mention chemical_utilization_object cues in context but have no chemical_utilization_object row
+- ⚠️ 691 mentions with a span boundary inside a token
+- ⚠️ 314 rows have no original_spans (entity asserted without a located mention)
+- ⚠️ 15 labels typed inconsistently across docs (>1 kind)

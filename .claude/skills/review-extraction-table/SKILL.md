@@ -44,8 +44,8 @@ Key facts about the format:
    python .claude/skills/review-extraction-table/scripts/profile_table.py data/<table>.tsv \
        --out reports/<table>.review.md --catalog-out reports/<table>.ungrounded_catalog.tsv
    ```
-   It writes a Markdown report with sections: Structure, Content, QC,
-   Ungrounded-term catalog, Flags. Create `reports/` if missing. Commit the
+   It writes a Markdown report with sections: 1 Structure, 2 Content, 3 QC,
+   4 Ungrounded-term catalog, 6 Extraction quality, 7 Flags. Create `reports/` if missing. Commit the
    `.review.md`; the catalog `.tsv` is gitignored (regenerable in seconds).
 
 2. **Read the report and interpret — don't just paste it.** For each section
@@ -65,6 +65,29 @@ Key facts about the format:
      species described by the paper itself; chemicals/media/enzymes missing
      from CHEBI/MediaDive are the interesting ones.
 
+   - *Extraction quality (§6)* — these are review queues, not verdicts:
+     - **6a false positives**: read every 1–2-char synonym match (element
+       symbol vs amino-acid code, e.g. `K`→lysine) and every "no word
+       overlap" row (sugars are the classic miss, e.g. `d-glucose`→D-fructose);
+       kind/kg_category mismatches should be zero.
+     - **6b noise**: generic class phrases, trait/assay phrases and media in
+       the chemical slot, placeholders, ≥6-word labels. Decide per bucket
+       whether it is a prompt problem (schema says "chemical", agent emits
+       "carbon sources") or a legitimate term for a different slot.
+     - **6c recall/truncation**: docs with ≤N rows; docs where a field cue
+       (°C, pH, NaCl…) appears in *other rows'* context but the field has no
+       row; `[[…]]` boundaries inside a token (substring locator hit inside a
+       longer name — `Pseudo[[dysgonomonas]]`, `[[KXB24]]T`); rows with no
+       `original_spans`. Only the source abstracts can confirm true recall.
+     - **6d METPO/vocabulary gaps**: relationship types without a METPO id;
+       ungrounded trait-like labels (enzymes, `H2/CO2`) that are phenotypes
+       not chemicals; frequent ungrounded specific chemicals (CHEBI synonym
+       gaps such as `meso-diaminopimelic acid`, `dl-lactate`).
+     - **6e process/prompt gaps**: placeholder spelling variants (prompt should
+       say *omit*), labels typed as more than one `kind`, no provenance
+       columns (model/prompt/schema version), case-only label variants.
+       Confirm against the actual extraction prompt and schema.
+
 3. **Spot-check by hand** — pick ~5 grounded rows and ~5 ungrounded rows per
    field with `grep`/pandas and confirm the grounding is right against the
    `context`. Report what you checked.
@@ -78,3 +101,5 @@ Key facts about the format:
 - New column names: add them to `ROLE_CANDIDATES` in `scripts/profile_table.py`.
 - New QC rule: append to `flags` in the QC section and, if useful, a table.
 - New ungrounded bucket: add a regex + branch in `bucket_ungrounded()`.
+- New noise type: add an entry to the `noise` dict in §6b; new field cue for
+  the recall proxy: `FIELD_CUES`; new trait pattern: `TRAIT_RE`.
