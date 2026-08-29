@@ -219,9 +219,11 @@
 _(none)_
 
 
-- Rows sharing the same mention key ['doc', 'field', 'entity_id', 'original_spans']: **1,634**
+- Located rows sharing the same mention key ['doc', 'field', 'entity_id', 'original_spans']: **1,609** (314 span-less rows excluded from this check)
 
-  - These differ only in relationship columns (context, relationship_subject_id, relationship_subject_label, chemical_relationship, chemical_relationship_id, chemical_relationship_label): one row per (mention, relationship) — expected, not a defect.
+  - These differ only in relationship columns (relationship_subject_id, relationship_subject_label, chemical_relationship, chemical_relationship_id, chemical_relationship_label): one row per (mention, relationship) — expected, not a defect.
+
+  - Span-less rows repeating the same (doc, field, entity): **25** — cannot tell distinct mentions from duplicates without spans.
 
 - Fully identical rows: **0**
 
@@ -336,7 +338,22 @@ _(none)_
 | nitrogen-free growth medium                                             |      1 |        1 | chemical_utilization_object | ...vesicles. N2-fixing vesicles are also produced in [[nitrogen-free growth medium]], in addition to hyphae and sporangi |
 
 
-### strain (kind=strain) — 5,846 unique labels (top 10)
+### strain (kind=strain) — 5,846 unique labels
+
+
+_Strain designations are per-paper identifiers; a ranked list is not informative. Composition instead:_
+
+| pattern                                                      | labels        |
+|:-------------------------------------------------------------|:--------------|
+| type-strain suffix `T` (e.g. `ABC12T`)                       | 4,950 (84.7%) |
+| culture-collection accession (DSM/ATCC/JCM/KCTC/CGMCC/…)     | 2,225 (38.1%) |
+| Genus species + designation (binomial prefix)                | 81 (1.4%)     |
+| pure alphanumeric code (e.g. `LC2-13A`, `zg-579T`)           | 5,494 (94.0%) |
+| contains whitespace/phrase (`strain_of`, `13 isolates of …`) | 65 (1.1%)     |
+| seen in >1 document                                          | 97 (1.7%)     |
+
+
+_Strain labels seen in >1 document (top 10) — the only ones worth cataloguing:_
 
 | label       |   rows |   n_docs | fields   | example_context                                                                                                          |
 |:------------|-------:|---------:|:---------|:-------------------------------------------------------------------------------------------------------------------------|

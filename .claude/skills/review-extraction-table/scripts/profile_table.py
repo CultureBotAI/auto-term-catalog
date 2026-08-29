@@ -246,15 +246,33 @@ def main() -> int:
     # duplicates
     key_cols = [c for c in (R["doc"], R["field"], R["entity_id"], R["spans"]) if c]
     if key_cols:
-        dups = df.duplicated(subset=key_cols, keep=False)
-        P(f"\n- Rows sharing the same mention key {key_cols}: **{dups.sum():,}**\n")
+        # Span-less rows cannot be keyed by mention: exclude them so two distinct un-located
+        # mentions of one entity in one doc are not mistaken for relationship duplicates.
+        located = (df[R["spans"]] != "") if R["spans"] else pd.Series([True] * len(df))
+        dups = df.duplicated(subset=key_cols, keep=False) & located
+        P(f"\n- Located rows sharing the same mention key {key_cols}: **{dups.sum():,}** ({(~located).sum():,} span-less rows excluded from this check)\n")
         if dups.any():
             rel_cols = [c for c in df.columns if c.startswith("relationship_") or c.startswith("chemical_relationship")]
-            differing = [c for c in df.columns if df[dups].groupby(key_cols)[c].nunique().gt(1).any()]
-            if differing and set(differing) <= set(rel_cols) | {R["context"]}:
-                P(f"  - These differ only in relationship columns ({', '.join(differing)}): one row per (mention, relationship) — expected, not a defect.\n")
+            grp = df[dups].groupby(key_cols)
+            differing = [c for c in df.columns if c not in key_cols and grp[c].nunique().gt(1).any()]
+            non_rel = [c for c in differing if c not in rel_cols and c != R["context"]]
+            if non_rel:
+                flags.append(f"{dups.sum():,} rows share a mention key but differ in non-relationship columns: {non_rel}")
             else:
-                flags.append(f"{dups.sum():,} rows share a mention key but differ in non-relationship columns: {differing}")
+                P(f"  - These differ only in relationship columns ({', '.join(c for c in differing if c != R['context'])}): one row per (mention, relationship) — expected, not a defect.\n")
+            # context should be a function of the span; if it differs while the relationship columns
+            # are identical, the same mention was emitted twice with different snippets
+            if R["context"] and R["context"] in differing:
+                same_rel = df[dups].duplicated(subset=key_cols + rel_cols, keep=False)
+                ctx_var = df[dups][same_rel].groupby(key_cols + rel_cols)[R["context"]].nunique().gt(1).sum()
+                if ctx_var:
+                    flags.append(f"{ctx_var:,} mention keys repeat with identical relationship columns but different context (true duplicate emission)")
+                    P(f"  - ⚠️ {ctx_var:,} mention keys repeat with identical relationship columns but different `context`.\n")
+        if R["spans"] and R["doc"] and R["entity_id"]:
+            sl = df[~located]
+            sl_dup = sl.duplicated(subset=[R["doc"], R["entity_id"]] + ([R["field"]] if R["field"] else []), keep=False).sum()
+            if sl_dup:
+                P(f"  - Span-less rows repeating the same (doc, field, entity): **{sl_dup:,}** — cannot tell distinct mentions from duplicates without spans.\n")
     full_dups = df.duplicated(keep=False).sum()
     P(f"- Fully identical rows: **{full_dups:,}**\n")
 
@@ -302,8 +320,25 @@ def main() -> int:
         for b in cat["bucket"].unique():
             sub = cat[cat["bucket"] == b]
             if b == "strain (kind=strain)":
-                P(f"\n### {b} — {len(sub):,} unique labels (top {min(len(sub), 10)})\n")
-                P(md_table(sub.drop(columns=["bucket"]), 10))
+                labs = sub[R["label"]]
+                n = len(labs)
+                def share(mask: pd.Series) -> str:
+                    return f"{int(mask.sum()):,} ({mask.mean()*100:.1f}%)"
+                stats = pd.DataFrame([
+                    {"pattern": "type-strain suffix `T` (e.g. `ABC12T`)", "labels": share(labs.str.fullmatch(r".*\dT"))},
+                    {"pattern": "culture-collection accession (DSM/ATCC/JCM/KCTC/CGMCC/…)", "labels": share(has(labs, COLLECTION_RE))},
+                    {"pattern": "Genus species + designation (binomial prefix)", "labels": share(labs.str.match(r"[A-Z][a-z]+ [a-z]{2,} \S"))},
+                    {"pattern": "pure alphanumeric code (e.g. `LC2-13A`, `zg-579T`)", "labels": share(labs.str.fullmatch(r"[A-Za-z]{0,6}[\-_ ]?[A-Za-z0-9\-_\.]*\d[A-Za-z0-9\-_\.]*"))},
+                    {"pattern": "contains whitespace/phrase (`strain_of`, `13 isolates of …`)", "labels": share(has(labs, re.compile(r"\b(?:strain|isolate|isolates|sp\.|clone)\b", re.I)) | labs.str.contains("_", regex=False))},
+                    {"pattern": "seen in >1 document", "labels": share(sub["n_docs"] > 1) if "n_docs" in sub else "n/a"},
+                ])
+                P(f"\n### {b} — {n:,} unique labels\n")
+                P("\n_Strain designations are per-paper identifiers; a ranked list is not informative. Composition instead:_\n")
+                P(md_table(stats))
+                if "n_docs" in sub:
+                    multi = sub[sub["n_docs"] > 1].drop(columns=["bucket"])
+                    P(f"\n_Strain labels seen in >1 document (top {min(len(multi), 10)}) — the only ones worth cataloguing:_\n")
+                    P(md_table(multi, 10))
             else:
                 P(f"\n### {b} — {len(sub):,} unique labels (top {min(len(sub), args.top)})\n")
                 P(md_table(sub.drop(columns=["bucket"]), args.top))
