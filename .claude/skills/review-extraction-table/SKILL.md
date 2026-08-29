@@ -61,7 +61,9 @@ Key facts about the format:
      placeholder or over-long labels; malformed spans.
    - *Catalog*: what is in the ungrounded set, by bucket (ungrounded rows
      only — QC flags above count all rows). `strain (kind=strain)` is expected
-     and usually not a catalog candidate; ungrounded taxa are mostly the novel
+     and usually not a catalog candidate, so it is summarised as a composition
+     table (base = unique labels; partition sums to 100%, cross-cutting
+     properties overlap) plus the few labels seen in >1 document; ungrounded taxa are mostly the novel
      species described by the paper itself; chemicals/media/enzymes missing
      from CHEBI/MediaDive are the interesting ones.
 

@@ -223,7 +223,7 @@ _(none)_
 
   - These differ only in relationship columns (relationship_subject_id, relationship_subject_label, chemical_relationship, chemical_relationship_id, chemical_relationship_label): one row per (mention, relationship) — expected, not a defect.
 
-  - Span-less rows repeating the same (doc, field, entity): **25** — cannot tell distinct mentions from duplicates without spans.
+  - Span-less rows repeating the same (doc, field, entity): **25**, differing only in relationship columns — expected expansion.
 
 - Fully identical rows: **0**
 
@@ -341,16 +341,26 @@ _(none)_
 ### strain (kind=strain) — 5,846 unique labels
 
 
-_Strain designations are per-paper identifiers; a ranked list is not informative. Composition instead:_
+_Strain designations are per-paper identifiers; a ranked list is not informative. Composition instead. Base = unique labels in this bucket; the first table is a partition (sums to 100%), the second lists overlapping properties._
 
-| pattern                                                      | labels        |
-|:-------------------------------------------------------------|:--------------|
-| type-strain suffix `T` (e.g. `ABC12T`)                       | 4,950 (84.7%) |
-| culture-collection accession (DSM/ATCC/JCM/KCTC/CGMCC/…)     | 2,225 (38.1%) |
-| Genus species + designation (binomial prefix)                | 81 (1.4%)     |
-| pure alphanumeric code (e.g. `LC2-13A`, `zg-579T`)           | 5,494 (94.0%) |
-| contains whitespace/phrase (`strain_of`, `13 isolates of …`) | 65 (1.1%)     |
-| seen in >1 document                                          | 97 (1.7%)     |
+| class (mutually exclusive)                                                                | labels        |
+|:------------------------------------------------------------------------------------------|:--------------|
+| culture-collection accession (DSM/ATCC/JCM/KCTC/CGMCC/…)                                  | 2,225 (38.1%) |
+| Genus species / sp. / aff. + designation                                                  | 92 (1.6%)     |
+| phrase (`strain …`, `13 isolates of …`, `strain_of`)                                      | 64 (1.1%)     |
+| bare code, no whitespace (`LC2-13A`, `zg-579T`)                                           | 2,403 (41.1%) |
+| lab/collection prefix + code, prefix not in COLLECTION_RE (`YIM 65594T`, `MCCC 1K00261T`) | 982 (16.8%)   |
+| other (with whitespace, no recognised pattern)                                            | 80 (1.4%)     |
+
+
+| cross-cutting property     | labels        |
+|:---------------------------|:--------------|
+| type-strain suffix `T`/`ᵀ` | 5,009 (85.7%) |
+| contains whitespace        | 3,370 (57.6%) |
+| seen in >1 document        | 97 (1.7%)     |
+
+
+_Examples of 'other':_ `SaT`, `MK-MG`, `MCT`, `MI-GT`, `NCAIM B 02678T`, `MobHT (=DSM 21220T= NBRC 104160T)`, `MobHT`, `MT/JULY 2010T`
 
 
 _Strain labels seen in >1 document (top 10) — the only ones worth cataloguing:_
