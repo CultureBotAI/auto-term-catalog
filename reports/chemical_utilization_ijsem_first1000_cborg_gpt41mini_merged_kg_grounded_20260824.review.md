@@ -700,6 +700,39 @@ _Signals that the extraction agent is not following (or is not given) a consiste
 - Labels differing only by case: **1** (no normalization step) e.g. `[not specified]`
 
 
+### 5f. Strain name resolution (`Genus species STRAIN`)
+
+
+- Strain rows: 5,980; resolved: **2,640 (44.1%)**. Rules are applied in priority order (see the script docstring); no document-level fallback.
+
+| rule                     |   rows |   pct |
+|:-------------------------|-------:|------:|
+| (unresolved)             |   3340 |  55.9 |
+| preceding_binomial       |   1558 |  26.1 |
+| equivalence              |    563 |   9.4 |
+| sp_nov                   |    242 |   4   |
+| type_strain_novel        |    207 |   3.5 |
+| preceding_binomial_genus |     65 |   1.1 |
+| preceding_genus_sp       |      5 |   0.1 |
+
+
+_One example per rule:_
+
+| label                        | full_scientific_name                      | name_source              |
+|:-----------------------------|:------------------------------------------|:-------------------------|
+| Gardnerella vaginalis 6119V5 | Gardnerella vaginalis 6119V5              | preceding_binomial       |
+| Marseille-Q2328T             | Gardnerella massiliensis Marseille-Q2328T | sp_nov                   |
+| DSM 110680T                  | Occallatibacter bavaricus DSM 110680T     | equivalence:JP12T        |
+| RSM42T                       | Rothia similimucilaginosa RSM42T          | type_strain_novel        |
+| EGH7T                        | Faecalimonas umbilicata EGH7T             | preceding_binomial_genus |
+| MTP4                         | Methanosarcina sp. MTP4                   | preceding_genus_sp       |
+
+
+- (doc, taxon) pairs assigned to >1 distinct strain label: 400 — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.
+
+- Unresolved rows whose mention is an `=`-linked accession (primary designation itself unresolved): 1,667 of 3,340
+
+
 
 ## 6. Flags
 
@@ -715,3 +748,4 @@ _Signals that the extraction agent is not following (or is not given) a consiste
 - ⚠️ 116 mentions whose span is a substring inside a longer word (locator defect; check original_spans upstream)
 - ⚠️ 314 rows have no original_spans (entity asserted without a located mention)
 - ⚠️ 15 labels typed inconsistently across docs (>1 kind)
+- ⚠️ strain name resolution: 44.1% of strain rows get a Genus species STRAIN name
