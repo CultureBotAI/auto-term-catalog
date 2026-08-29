@@ -76,12 +76,12 @@ def has(series: pd.Series, rx: re.Pattern) -> pd.Series:
 STEREO_RE = re.compile(
     r"(?:^|[\s,/\-–])"
     r"(?:"
-    r"(?:\(?(DL|LL|DD|dl|ll|dd|[DLdl]|RS|[RS]|meso|cis|trans|alpha|beta|α|β|[EZ])\)?"
-    r"|\((\d+[RSEZ](?:,\d+[RSEZ])*)\))"
+    r"(?:\(?(DL|LL|DD|dl|ll|dd|[DLdl],[DLdl]|[RS],[RS]|[DLdl]|RS|[RS]|meso|cis|trans|alpha|beta|α|β|[EZ])\)?"
+    r"|\((\d+[RSEZrsez](?:,\d+[RSEZrsez])*)\))"
     r"(?:\(([+\-−±])\))?"
     r"|\(([+\-−±])\)"
     r")"
-    r"(?=[\-–])"
+    r"(?=[\-–][A-Za-zα-ω(\[])"
 )
 STEREO_FAMILY = {"D": "DL", "L": "DL", "DL": "DL", "LL": "DL", "DD": "DL", "meso": "DL",
                  "R": "RS", "S": "RS", "RS": "RS", "+": "sign", "-": "sign", "±": "sign",
@@ -93,16 +93,21 @@ def stereo_prefixes(x: str) -> dict[str, list[str]]:
     """Stereo/configuration prefixes in a chemical name grouped by nomenclature family, in order of
     appearance, normalised (d→D, α→alpha, − → -). D/L and R/S are different systems
     (D-lactate == (R)-lactate), so a mismatch is only meaningful within one family.
-    Locant-qualified descriptors such as (2R,3S) are kept whole in the RS family."""
+    Locant-qualified descriptors are kept whole: (2R,3S) in the RS family, (3E,5Z) in geo.
+    Bare descriptors must be followed by a letter (`D-glucose`, not `S-27T` or `l-1`)."""
     norm = {"d": "D", "l": "L", "dl": "DL", "ll": "LL", "dd": "DD", "α": "alpha", "β": "beta", "−": "-"}
     out: dict[str, list[str]] = {}
     for simple, locant, sign, sign2 in STEREO_RE.findall(x):
         sign = sign or sign2
         if simple:
+            if "," in simple:  # d,l- / R,S- racemate spellings
+                simple = simple.replace(",", "").upper()
             m = norm.get(simple, simple)
             out.setdefault(STEREO_FAMILY[m], []).append(m)
         if locant:
-            out.setdefault("RS", []).append(locant.upper())
+            loc = locant.upper()
+            fam = "geo" if re.fullmatch(r"(?:\d+[EZ],?)+", loc) else "RS"
+            out.setdefault(fam, []).append(loc)
         if sign:
             out.setdefault("sign", []).append(norm.get(sign, sign))
     return out
@@ -450,8 +455,11 @@ def main() -> int:
             flags.append(f"{len(stdf)} label/kg_name pairs differ in stereo prefix (D/L, R/S, α/β…) — likely wrong enantiomer/isomer")
         one = [bool(tokens(l) & tokens(k)) and bool(stereo_prefixes(l)) != bool(stereo_prefixes(k))
                for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]])]
-        onedf = lex2[one][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
-        P(f"\n**Stereo prefix on one side only** ({len(onedf)} unique) — a generic label grounded to a specific enantiomer (`maltose`→D-maltose) or vice versa; usually acceptable, listed for completeness:\n")
+        onedf = lex2[one][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].copy()
+        onedf["direction"] = ["label generic → kg specific" if not stereo_prefixes(l) else "label specific → kg generic (descriptor dropped)"
+                              for l in onedf[R["label"]]]
+        onedf = onedf.value_counts().reset_index(name="rows").sort_values(["direction", "rows"], ascending=[True, False])
+        P(f"\n**Stereo prefix on one side only** ({len(onedf)} unique). Generic→specific (`maltose`→D-maltose) is usually acceptable; specific→generic (`d-lactose`→lactose) means the grounding dropped a descriptor the extractor captured — check:\n")
         P(md_table(onedf, args.top))
     if R["kg_category"] and kind_col and R["grounded_id"]:
         exp = {"chemical": "ChemicalEntity|ChemicalSubstance|Molecule|Macromolecule", "taxon_candidate": "OrganismTaxon", "phenotype_observation": "OntologyClass", "strain": "OrganismTaxon|strain"}

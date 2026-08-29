@@ -504,18 +504,18 @@ _Precision proxies. Each table is a review queue, not a verdict._
 _(none)_
 
 
-**Stereo prefix on one side only** (8 unique) — a generic label grounded to a specific enantiomer (`maltose`→D-maltose) or vice versa; usually acceptable, listed for completeness:
+**Stereo prefix on one side only** (8 unique). Generic→specific (`maltose`→D-maltose) is usually acceptable; specific→generic (`d-lactose`→lactose) means the grounding dropped a descriptor the extractor captured — check:
 
-| label                | kg_name                           | grounded_id   | match_type   |   rows |
-|:---------------------|:----------------------------------|:--------------|:-------------|-------:|
-| maltose              | D-maltose                         | CHEBI:17306   | synonym      |     18 |
-| amino acids          | alpha-amino acid                  | CHEBI:33704   | synonym      |      8 |
-| alanine              | dl-alanine                        | CHEBI:16449   | synonym      |      4 |
-| fructose-6-phosphate | beta-D-fructofuranose 6-phosphate | CHEBI:16084   | synonym      |      3 |
-| d-lactose            | lactose                           | CHEBI:17716   | synonym      |      2 |
-| glycyl-l-proline     | glycine-proline                   | CHEBI:70744   | synonym      |      2 |
-| adonitol             | D-Adonitol                        | CHEBI:15963   | synonym      |      1 |
-| d-melibiose          | melibiose                         | CHEBI:28053   | synonym      |      1 |
+| label                | kg_name                           | grounded_id   | match_type   | direction                                        |   rows |
+|:---------------------|:----------------------------------|:--------------|:-------------|:-------------------------------------------------|-------:|
+| maltose              | D-maltose                         | CHEBI:17306   | synonym      | label generic → kg specific                      |     18 |
+| amino acids          | alpha-amino acid                  | CHEBI:33704   | synonym      | label generic → kg specific                      |      8 |
+| alanine              | dl-alanine                        | CHEBI:16449   | synonym      | label generic → kg specific                      |      4 |
+| fructose-6-phosphate | beta-D-fructofuranose 6-phosphate | CHEBI:16084   | synonym      | label generic → kg specific                      |      3 |
+| adonitol             | D-Adonitol                        | CHEBI:15963   | synonym      | label generic → kg specific                      |      1 |
+| d-lactose            | lactose                           | CHEBI:17716   | synonym      | label specific → kg generic (descriptor dropped) |      2 |
+| glycyl-l-proline     | glycine-proline                   | CHEBI:70744   | synonym      | label specific → kg generic (descriptor dropped) |      2 |
+| d-melibiose          | melibiose                         | CHEBI:28053   | synonym      | label specific → kg generic (descriptor dropped) |      1 |
 
 
 **kind / kg_category mismatch** (0 unique):
