@@ -50,19 +50,18 @@ MEDIUM_RE = re.compile(
 ENZYME_RE = re.compile(r"\b\w{3,}(idase|osidase|ase)\b|\b(activity|test|assay)\b", re.I)
 UNSPEC_RE = re.compile(r"^\W*(unspecified|not specified|not stated|unknown|none|n/?a)\W*$", re.I)
 GENERIC_RE = re.compile(
-    r"\b(sources?|compounds?|substrates?|sugars?|acids|various|several|some|other|many|range of|"
-    r"a variety|different|nutrients?|elements?|salts|ions|metals|hydrocarbons|organic matter)\b", re.I)
-VALUE_RE = re.compile(r"^\s*[\d\.\-–,]+\s*(%|mM|M|g/l|g/L|mg/l|mg/L|\(w/v\)|°C|℃)?", re.I)
-ELLIPSIS = "..."
+    r"\b(sources?|compounds?|substrates?|sugars?|various|several|some|other|many|multiple|range of|"
+    r"a variety|different|elements?|ions|metals|hydrocarbons|organic matter|and oligo|fluid|mucus)\b", re.I)
+VALUE_RE = re.compile(r"^\s*[\d\.\-–,]+\s*(?:%|mM|M\b|g/l|mg/l|\(w/v\)|°C|℃|\s\S)", re.I)
 # phenotype/trait-like phrases that landed in the chemical slot -> METPO candidates
 TRAIT_RE = re.compile(
-    r"\b(\w+ase|H2/CO2|autotroph\w*|heterotroph\w*|motil\w+|spore\w*|gram[- ]\w+|aerob\w*|anaerob\w*|"
-    r"halophil\w*|thermophil\w*|psychrophil\w*|alkaliphil\w*|acidophil\w*|indole|nitrate reduction|"
+    r"\b(\w{3,}ase|H2/CO2|autotroph\w*|heterotroph\w*|motil\w+|spore\w*|gram[- ]\w+|aerob\w*|anaerob\w*|"
+    r"halophil\w*|thermophil\w*|psychrophil\w*|alkaliphil\w*|acidophil\w*|indole(?![- ]?\d|[- ]acetic)|nitrate reduction|"
     r"fermentation|hydrolysis|solubilization|oxidation|reduction)\b", re.I)
 EXPECTED_FIELDS = {"strains", "study_taxa", "chemical_utilization_object", "temperature_observation", "pH_observation"}
 FIELD_CUES = {  # field -> regex over concatenated context that suggests the slot should be non-empty
     "temperature_observation": re.compile(r"°C|℃|\btemperature\b", re.I),
-    "pH_observation": re.compile(r"\bpH\b"),
+    "pH_observation": re.compile(r"\bpH\b", re.I),
     "chemical_utilization_object": re.compile(r"\bNaCl\b|\bcarbon source|\bglucose\b|\bhydroly|\butiliz|\bferment", re.I),
 }
 
@@ -313,16 +312,16 @@ def main() -> int:
             P(f"\nFull catalog written to `{args.catalog_out}`\n")
 
     # ---------------- EXTRACTION QUALITY ----------------
-    P("\n\n## 6. Extraction quality (all rows unless stated)\n")
+    P("\n\n## 5. Extraction quality (all rows unless stated)\n")
     lab = df[R["label"]] if R["label"] else pd.Series([""] * len(df))
     kind_col = R["kind"] or R["field"]
     chem_mask = (df[kind_col] == "chemical") if kind_col else pd.Series([True] * len(df))
     grounded = (df[R["grounded_id"]] != "") if R["grounded_id"] else pd.Series([False] * len(df))
 
     # --- 6a false-positive candidates ---
-    P("\n### 6a. False-positive candidates (grounded, but suspicious)\n")
+    P("\n### 5a. False-positive candidates (grounded, but suspicious)\n")
     P("\n_Precision proxies. Each table is a review queue, not a verdict._\n")
-    if R["grounded_id"] and R["match_type"] and R["kg_name"]:
+    if R["grounded_id"] and R["match_type"] and R["kg_name"] and R["label"]:
         syn = df[grounded & (df[R["match_type"]] == "synonym")]
         short = syn[syn[R["label"]].str.len() <= 2][[R["label"], R["kg_name"], R["grounded_id"]]].drop_duplicates()
         P(f"\n**Synonym matches on 1–2-character labels** ({len(short)} unique) — element symbols vs one-letter amino-acid codes collide here:\n")
@@ -336,7 +335,7 @@ def main() -> int:
         P(f"\n**No word overlap between label and kg_name** ({len(nov)} unique; top {args.top}) — formulas and true synonyms are fine, look for meaning changes:\n")
         P(md_table(nov, args.top))
     if R["kg_category"] and kind_col and R["grounded_id"]:
-        exp = {"chemical": "Chemical|Molecule", "taxon_candidate": "OrganismTaxon", "phenotype_observation": "OntologyClass", "strain": "OrganismTaxon|strain"}
+        exp = {"chemical": "ChemicalEntity|ChemicalSubstance|Molecule|Macromolecule", "taxon_candidate": "OrganismTaxon", "phenotype_observation": "OntologyClass", "strain": "OrganismTaxon|strain"}
         mm = []
         for k, pat in exp.items():
             sub = df[grounded & (df[kind_col] == k) & ~df[R["kg_category"]].str.contains(pat, regex=True)]
@@ -352,14 +351,14 @@ def main() -> int:
         P(f"\n- Chemical rows whose *label* carries a value/concentration (e.g. `12.5% NaCl`): **{len(val):,}** — value belongs in `chemical_level_type`/`context`, not the term label\n")
 
     # --- 6b noise ---
-    P("\n### 6b. Noise: labels that are not real, specific terms\n")
+    P("\n### 5b. Noise: labels that are not real, specific terms\n")
     noise = {
         "generic class phrase": has(lab, GENERIC_RE) & chem_mask,
         "trait / assay phrase in chemical slot": has(lab, TRAIT_RE) & chem_mask & ~has(lab, MEDIUM_RE),
         "growth medium in chemical slot": has(lab, MEDIUM_RE) & chem_mask,
         "value/unit only": lab.str.fullmatch(r"[\d\.\-–,\s%]+(?:\s*(?:%|mM|M|g/l|g/L|w/v|°C|℃))?") & chem_mask,
         "placeholder": lab.apply(lambda x: bool(UNSPEC_RE.search(x))),
-        "≥6 words": lab.str.split().str.len() >= 6,
+        "≥6 words (chemical/taxon slots)": (lab.str.split().str.len() >= 6) & (df[kind_col] != "phenotype_observation" if kind_col else True),
     }
     nrows = []
     for name, m in noise.items():
@@ -371,15 +370,19 @@ def main() -> int:
     P(f"\n- Rows matching ≥1 noise pattern: **{any_noise.sum():,} / {len(df):,} ({any_noise.mean()*100:.1f}%)**\n")
 
     # --- 6c recall / truncation proxies ---
-    P("\n### 6c. Incomplete or truncated extraction (recall proxies)\n")
+    P("\n### 5c. Incomplete or truncated extraction (recall proxies)\n")
     P("\n_The table has no source text, so these are proxies from `context` snippets; confirm against abstracts._\n")
     if R["doc"] and R["field"]:
         per = df.groupby(R["doc"])[R["field"]].value_counts().unstack(fill_value=0)
         tot = per.sum(axis=1)
         q = tot.quantile([0, .1, .5, .9, 1]).astype(int)
         P(f"\n- Rows per document: min {q[0]}, p10 {q[.1]}, median {q[.5]}, p90 {q[.9]}, max {q[1]}\n")
-        lowdocs = tot[tot <= max(2, q[.1] // 2)]
-        P(f"- Documents with ≤{max(2, q[.1] // 2)} rows (possible failed/empty extraction): **{len(lowdocs)}** {', '.join(map(str, lowdocs.index[:10]))}\n")
+        thr = max(2, q[.1] // 2)  # half the 10th percentile, floor 2: "far below normal for this run"
+        lowdocs = tot[tot <= thr]
+        onlytax = [d for d in lowdocs.index if set(per.columns[per.loc[d] > 0]) <= {"strains", "study_taxa"}]
+        P(f"- Documents with ≤{thr} rows (half of p10; possible failed/empty extraction): **{len(lowdocs)}**, of which {len(onlytax)} contain only strain/taxon rows: {', '.join(map(str, lowdocs.index[:10]))}\n")
+        if len(lowdocs):
+            flags.append(f"{len(lowdocs)} docs have ≤{thr} rows ({len(onlytax)} with only strain/taxon rows) — check for failed extraction")
         zero = (per == 0).sum().rename("docs_with_0_rows").reset_index()
         zero["pct_docs"] = (zero["docs_with_0_rows"] / len(per) * 100).round(1)
         P("\n**Documents with no rows per field:**\n")
@@ -390,7 +393,14 @@ def main() -> int:
             for fld, cue in FIELD_CUES.items():
                 if fld in per.columns:
                     miss = [d for d, c in ctxdoc.items() if cue.search(c) and per.loc[d, fld] == 0]
-                    rows_.append({"field": fld, "docs with cue in context but 0 rows": len(miss), "examples": ", ".join(map(str, miss[:8]))})
+                    percue = {}
+                    for d in miss:
+                        for alt in cue.pattern.split("|"):
+                            if re.search(alt, ctxdoc[d], cue.flags):
+                                percue[alt.replace("\\b", "")] = percue.get(alt.replace("\\b", ""), 0) + 1
+                    rows_.append({"field": fld, "docs with cue in context but 0 rows": len(miss),
+                                  "per cue": ", ".join(f"{k}:{v}" for k, v in sorted(percue.items(), key=lambda kv: -kv[1])),
+                                  "examples": ", ".join(map(str, miss[:6]))})
             P("\n**Field cue present in other rows' context, but field empty** (strong truncation signal):\n")
             P(md_table(pd.DataFrame(rows_)))
             for r_ in rows_:
@@ -401,19 +411,34 @@ def main() -> int:
             flags.append(f"expected fields absent from the whole table: {sorted(missing_fields)}")
     if R["context"]:
         ctx = df[R["context"]]
-        def midtoken(c: str) -> str:
-            """Return a snippet around the first [[...]] whose boundary sits inside a token, else ''."""
+        def midtoken(c: str) -> tuple[str, str]:
+            """Classify the first problematic [[...]] in a context.
+            Returns (kind, snippet): kind is 'in-token' when a token continues across the bracket on
+            both sides (substring locator hit, e.g. glu[[co]]se), 'offset' when the span starts/ends
+            with whitespace/punctuation (span shifted by a char), '' when clean. A trailing 'T'
+            (type-strain superscript) after ]] is ignored."""
             for m in re.finditer(r"\[\[(.+?)\]\]", c):
+                inner = m.group(1)
                 pre, post = c[max(0, m.start() - 1):m.start()], c[m.end():m.end() + 1]
-                if (pre.isalnum() and not c[:m.start()].endswith(ELLIPSIS)) or (post.isalnum() and not c[m.end():].startswith(ELLIPSIS)):
-                    return c[max(0, m.start() - 25):m.end() + 25]
-            return ""
-        snip = ctx.apply(midtoken)
-        mt = snip != ""
-        P(f"\n- Mentions whose `[[…]]` boundary cuts inside a token (partial-span extraction): **{mt.sum():,}**\n")
+                snippet = c[max(0, m.start() - 25):m.end() + 25]
+                if inner[:1].isspace() or inner[-1:].isspace() or (inner[:1] in "([" and pre.isalnum()):
+                    return "offset", snippet
+                post_alnum = post.isalnum() and not (post == "T" and not c[m.end() + 1:m.end() + 2].isalnum())
+                if (pre.isalnum() and inner[:1].isalnum()) or (post_alnum and inner[-1:].isalnum()):
+                    return "in-token", snippet
+            return "", ""
+        cls = ctx.apply(midtoken)
+        kindv, snip = cls.str[0], cls.str[1]
+        mt, off = kindv == "in-token", kindv == "offset"
+        key_cols_m = [c for c in (R["doc"], R["field"], R["entity_id"], R["spans"]) if c]
+        n_ment = lambda m: df[m].drop_duplicates(subset=key_cols_m).shape[0] if key_cols_m else int(m.sum())
+        P(f"\n- Spans that start/end on whitespace or an opening bracket (span offset error, e.g. `5.0-11.0[[ (optimum pH 7.0]])`): **{n_ment(off):,} mentions / {off.sum():,} rows**\n")
+        if off.any():
+            flags.append(f"{n_ment(off):,} mentions have a span offset error (leading/trailing whitespace inside [[…]])")
+        P(f"\n- Mentions where the token continues across the `[[…]]` boundary (span locator matched a substring inside a longer word, e.g. `glu[[co]]se`; `]]T` type-strain superscripts ignored): **{n_ment(mt):,} mentions / {mt.sum():,} rows**\n")
         if mt.any():
-            P(md_table(pd.DataFrame({R["label"]: df.loc[mt, R["label"]], "snippet": snip[mt]}).drop_duplicates(), min(args.top, 15)))
-            flags.append(f"{mt.sum():,} mentions with a span boundary inside a token")
+            P(md_table(pd.DataFrame({"label": df.loc[mt, R["label"]] if R["label"] else "", "snippet": snip[mt]}).drop_duplicates(), min(args.top, 15)))
+            flags.append(f"{n_ment(mt):,} mentions whose span is a substring inside a longer word (locator defect; check original_spans upstream)")
     if R["spans"]:
         nospan = (df[R["spans"]] == "")
         P(f"- Rows with empty `original_spans` (mention not located in text): **{nospan.sum():,}**\n")
@@ -421,11 +446,14 @@ def main() -> int:
             flags.append(f"{nospan.sum():,} rows have no original_spans (entity asserted without a located mention)")
 
     # --- 6d METPO gaps ---
-    P("\n### 6d. METPO / vocabulary gaps\n")
+    P("\n### 5d. METPO / vocabulary gaps\n")
     if R["rel_label"] or "chemical_relationship" in df.columns:
         relc = "chemical_relationship" if "chemical_relationship" in df.columns else R["rel_label"]
         rel = df[df[relc] != ""]
-        inv = rel.groupby(relc).agg(rows=(relc, "size"), metpo_id=(R["rel_id"], lambda s: ", ".join(sorted(set(x for x in s if x))[:3]) if R["rel_id"] else ""))
+        aggs = {"rows": (relc, "size")}
+        if R["rel_id"]:
+            aggs["metpo_id"] = (R["rel_id"], lambda s: ", ".join(sorted(set(x for x in s if x))[:3]))
+        inv = rel.groupby(relc).agg(**aggs)
         inv = inv.sort_values("rows", ascending=False).reset_index()
         P(f"\n**Relationship types used** ({len(inv)}):\n")
         P(md_table(inv, args.top))
@@ -435,8 +463,8 @@ def main() -> int:
             P(md_table(unmapped, args.top))
             if len(unmapped):
                 flags.append(f"{len(unmapped)} relationship types lack a METPO id: {', '.join(unmapped[relc].head(5))}")
-    if R["grounded_id"]:
-        cand = df[~grounded & chem_mask & has(lab, TRAIT_RE)]
+    if R["grounded_id"] and R["label"]:
+        cand = df[~grounded & chem_mask & has(lab, TRAIT_RE) & ~has(lab, MEDIUM_RE)]
         cand = cand.groupby(R["label"]).agg(rows=(R["label"], "size"), n_docs=(R["doc"], "nunique") if R["doc"] else (R["label"], "size")).sort_values("rows", ascending=False).reset_index()
         P(f"\n**Ungrounded trait-like labels** ({len(cand)} unique; top {args.top}) — phenotypes/enzymes extracted as chemicals; candidates for METPO classes or for schema guidance:\n")
         P(md_table(cand, args.top))
@@ -448,7 +476,7 @@ def main() -> int:
         P(md_table(freq.rename("rows").reset_index(), args.top))
 
     # --- 6e process / prompt gaps ---
-    P("\n### 6e. Process and prompt-instruction gaps\n")
+    P("\n### 5e. Process and prompt-instruction gaps\n")
     P("\n_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm._\n")
     ph = lab[lab.apply(lambda x: bool(UNSPEC_RE.search(x)))].value_counts()
     P(f"\n- Placeholder spellings: **{len(ph)}** variants ({', '.join(f'`{v}`' for v in ph.index[:8])}) — prompt should say *omit* rather than emit a placeholder, or fix one spelling\n")
@@ -464,12 +492,11 @@ def main() -> int:
     prov = [c for c in df.columns if re.search(r"model|prompt|schema|version|run", c, re.I)]
     P(f"- Provenance columns (model/prompt/schema/version): **{prov or 'none'}** — add them upstream so results can be tied to a run\n")
     if R["label"]:
-        casevar = lab.str.lower().groupby(lab.str.lower()).size()
         distinct = lab.groupby(lab.str.lower()).nunique()
         P(f"- Labels differing only by case: **{(distinct > 1).sum():,}** (no normalization step) e.g. {', '.join(f'`{x}`' for x in distinct[distinct > 1].index[:6])}\n")
 
     # ---------------- FLAGS ----------------
-    P("\n\n## 7. Flags\n")
+    P("\n\n## 6. Flags\n")
     if flags:
         for f in flags:
             P(f"- ⚠️ {f}")

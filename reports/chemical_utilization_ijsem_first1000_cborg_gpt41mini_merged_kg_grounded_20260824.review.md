@@ -414,10 +414,10 @@ Full catalog written to `reports/chemical_utilization_ijsem_first1000_cborg_gpt4
 
 
 
-## 6. Extraction quality (all rows unless stated)
+## 5. Extraction quality (all rows unless stated)
 
 
-### 6a. False-positive candidates (grounded, but suspicious)
+### 5a. False-positive candidates (grounded, but suspicious)
 
 
 _Precision proxies. Each table is a review queue, not a verdict._
@@ -477,25 +477,25 @@ _Precision proxies. Each table is a review queue, not a verdict._
 _(none)_
 
 
-- Chemical rows whose *label* carries a value/concentration (e.g. `12.5% NaCl`): **414** — value belongs in `chemical_level_type`/`context`, not the term label
+- Chemical rows whose *label* carries a value/concentration (e.g. `12.5% NaCl`): **398** — value belongs in `chemical_level_type`/`context`, not the term label
 
 
-### 6b. Noise: labels that are not real, specific terms
+### 5b. Noise: labels that are not real, specific terms
 
 | noise type                            |   rows |   of which grounded | examples                                                                                                                                                                                                           |
 |:--------------------------------------|-------:|--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| generic class phrase                  |     68 |                  35 | `amino acids`, `nutrient agar`, `carbon sources`, `aromatic compounds`, `sea salts`, `mycolic acids`                                                                                                               |
-| trait / assay phrase in chemical slot |     64 |                  23 | `catalase`, `oxidase`, `indole-3-acetic acid`, `H2/CO2`, `urease`, `indole`                                                                                                                                        |
+| generic class phrase                  |     43 |                  14 | `carbon sources`, `aromatic compounds`, `metals`, `fish gut fluid`, `sugars`, `aromatic hydrocarbons`                                                                                                              |
+| trait / assay phrase in chemical slot |     51 |                  15 | `catalase`, `oxidase`, `H2/CO2`, `urease`, `indole`, `β-glucuronidase`                                                                                                                                             |
 | growth medium in chemical slot        |    147 |                  46 | `yeast extract`, `casein`, `tryptone`, `R2A agar`, `tryptic soy agar`, `nutrient agar`                                                                                                                             |
 | value/unit only                       |      0 |                   0 |                                                                                                                                                                                                                    |
 | placeholder                           |     13 |                   0 | `<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`                                                                                                         |
-| ≥6 words                              |     92 |                  85 | `brain heart infusion agar supplemented w`, `temperature range 25 and 42 °C`, `temperature range 25 and 20 °C`, `0.5 % (w/v; optimum, 0 %) NaCl`, `temperature range 20 to 37 °C`, `temperature range -2 to 32 °C` |
+| ≥6 words (chemical/taxon slots)       |     33 |                  26 | `brain heart infusion agar supplemented w`, `0.5 % (w/v; optimum, 0 %) NaCl`, `up to 3.5 % (w/v) NaCl`, `up to 12 % (w/v) NaCl`, `optimum 0% sodium chloride (NaCl, w/v)`, `multi locus sequence type 598 strains` |
 
 
-- Rows matching ≥1 noise pattern: **372 / 14,982 (2.5%)**
+- Rows matching ≥1 noise pattern: **282 / 14,982 (1.9%)**
 
 
-### 6c. Incomplete or truncated extraction (recall proxies)
+### 5c. Incomplete or truncated extraction (recall proxies)
 
 
 _The table has no source text, so these are proxies from `context` snippets; confirm against abstracts._
@@ -503,7 +503,7 @@ _The table has no source text, so these are proxies from `context` snippets; con
 
 - Rows per document: min 2, p10 7, median 14, p90 24, max 59
 
-- Documents with ≤3 rows (possible failed/empty extraction): **11** 126, 159, 171, 227, 288, 351, 372, 402, 429, 602
+- Documents with ≤3 rows (half of p10; possible failed/empty extraction): **11**, of which 11 contain only strain/taxon rows: 126, 159, 171, 227, 288, 351, 372, 402, 429, 602
 
 
 **Documents with no rows per field:**
@@ -519,37 +519,40 @@ _The table has no source text, so these are proxies from `context` snippets; con
 
 **Field cue present in other rows' context, but field empty** (strong truncation signal):
 
-| field                       |   docs with cue in context but 0 rows | examples                              |
-|:----------------------------|--------------------------------------:|:--------------------------------------|
-| temperature_observation     |                                     8 | 144, 15, 357, 553, 61, 66, 725, 878   |
-| pH_observation              |                                    15 | 137, 144, 15, 191, 329, 408, 419, 61  |
-| chemical_utilization_object |                                    61 | 100, 111, 123, 13, 139, 179, 203, 214 |
+| field                       |   docs with cue in context but 0 rows | per cue                                                             | examples                    |
+|:----------------------------|--------------------------------------:|:--------------------------------------------------------------------|:----------------------------|
+| temperature_observation     |                                     8 | °C:5, temperature:2, ℃:1                                            | 144, 15, 357, 553, 61, 66   |
+| pH_observation              |                                    29 | pH:29                                                               | 136, 137, 144, 146, 15, 191 |
+| chemical_utilization_object |                                    61 | NaCl:51, ferment:5, glucose:2, utiliz:2, hydroly:2, carbon source:1 | 100, 111, 123, 13, 139, 179 |
 
 
-- Mentions whose `[[…]]` boundary cuts inside a token (partial-span extraction): **691**
+- Spans that start/end on whitespace or an opening bracket (span offset error, e.g. `5.0-11.0[[ (optimum pH 7.0]])`): **479 mentions / 530 rows**
+
+
+- Mentions where the token continues across the `[[…]]` boundary (span locator matched a substring inside a longer word, e.g. `glu[[co]]se`; `]]T` type-strain superscripts ignored): **116 mentions / 148 rows**
 
 | label                     | snippet                                                                         |
 |:--------------------------|:--------------------------------------------------------------------------------|
 | Dysgonomonas              | hagoides and (iii) Pseudo[[dysgonomonas]] gen. nov. represented by              |
 | Coprococcus comes         | Allocoprococcus, as Allo[[coprococcus comes]] gen. nov., comb. nov. Al          |
-| KXB24                     | aminicola sp. nov., with [[KXB24]]T (=NCPPB 4802T=LMG 33887                     |
-| DNF00809                  | vel bacterium designated [[DNF00809]]T using biochemical, geno                  |
 | Qipengyuania triglochinis | hinis sp. nov. and Alteri[[qipengyuania triglochinis]] sp. nov. are proposed. T |
 | Micromonospora            | in a distinct lineage of [[Micromonospora]]ceae, separate from the f            |
 | Vibrio                    | ember of the genus Bdello[[vibrio]] based on its 16S rRNA ge                    |
-| 22-AL-CL-001              | on where the type strain [[22-AL-CL-001]]T (NCPPB 4760T=LMG 33363T              |
 | Fodinibius salipaludis    | e reclassification of Ali[[fodinibius salipaludis]] as Fodinibius salipaludi    |
-| CGMCC 2.7770              | v. is proposed (holotype [[CGMCC 2.7770]]T).                                    |
 | Chlamydia                 | The [[Chlamydia]]ceae is a family of stric                                      |
 | chitin                    | A novel [[chitin]]olytic bacterium, designa                                     |
-| CNCM I-4541               | osed. The type strain is [[CNCM I-4541]]T (=CIP 112513T=JCM 39552               |
 | Lactococcus               | for which the name Pseudo[[lactococcus]] is proposed. Three lacti               |
-| pH optimum 7.0            | at pH values of 5.0-11.0[[ (optimum pH 7.0]]).                                  |
+| methylamine               | methanol, methylamine, di[[methylamine]], trimethylamine, dimethy               |
+| CO                        | ated from the top of the [[co]]vering soil of an active                         |
+| sulfate                   | elemental sulfur and thio[[sulfate]] as alternate electron ac                   |
+| Ca                        | m. The taxonomic classifi[[ca]]tion of this novel isolat                        |
+| K                         | biogenesis and IAA, cyto[[k]]inin and gamma-aminobutyr                          |
+| phosphate                 | he ability to solubilize [[phosphate]]s, stain [[C3T]] exhibite                 |
 
 - Rows with empty `original_spans` (mention not located in text): **314**
 
 
-### 6d. METPO / vocabulary gaps
+### 5d. METPO / vocabulary gaps
 
 
 **Relationship types used** (23):
@@ -586,14 +589,13 @@ _The table has no source text, so these are proxies from `context` snippets; con
 _(none)_
 
 
-**Ungrounded trait-like labels** (16 unique; top 30) — phenotypes/enzymes extracted as chemicals; candidates for METPO classes or for schema guidance:
+**Ungrounded trait-like labels** (13 unique; top 30) — phenotypes/enzymes extracted as chemicals; candidates for METPO classes or for schema guidance:
 
 | label                                           |   rows |   n_docs |
 |:------------------------------------------------|-------:|---------:|
 | oxidase                                         |      9 |        5 |
 | H2/CO2                                          |      7 |        5 |
 | urease                                          |      6 |        5 |
-| indole acetic acid                              |      5 |        3 |
 | 1-aminocyclopropane-1-carboxylic acid deaminase |      2 |        1 |
 | catalase activity                               |      2 |        1 |
 | β-glucosidase                                   |      2 |        1 |
@@ -601,44 +603,41 @@ _(none)_
 | 1-aminocyclopropane-1-carboxylate deaminase     |      1 |        1 |
 | nitrogenase                                     |      1 |        1 |
 | protease                                        |      1 |        1 |
-| trypticase                                      |      1 |        1 |
-| trypticase soy agar                             |      1 |        1 |
 | urease substrate                                |      1 |        1 |
 | α-arabinosidase activity                        |      1 |        1 |
 | α-glucosidase                                   |      1 |        1 |
 
 
-**Ungrounded specific chemicals seen in ≥2 rows** (24) — CHEBI synonym / lexical-index gaps:
+**Ungrounded specific chemicals seen in ≥2 rows** (23) — CHEBI synonym / lexical-index gaps:
 
 | label                                      |   rows |
 |:-------------------------------------------|-------:|
 | meso-diaminopimelic acid                   |     14 |
 | ll-diaminopimelic acid                     |      7 |
 | dl-lactate                                 |      7 |
+| indole acetic acid                         |      5 |
 | methyl-β-d-glucopyranoside                 |      5 |
 | carotenoid-type pigments                   |      3 |
 | tartaric acid                              |      3 |
 | soluble starch                             |      3 |
-| poly(ε-caprolactone)                       |      2 |
-| coral mucus                                |      2 |
+| p-hydroxy-phenylacetic acid                |      2 |
+| poly(butylene succinate-co-adipate) (PBSA) |      2 |
 | d,l-lactate                                |      2 |
 | phosphatidylethanolamine (PE)              |      2 |
-| p-hydroxy-phenylacetic acid                |      2 |
 | natural rubber                             |      2 |
 | dl-lactic acid                             |      2 |
 | actidione                                  |      2 |
-| multiple antibiotics                       |      2 |
 | mono- and oligosaccharides                 |      2 |
-| fish gut fluid                             |      2 |
 | methyl-α-d-glucopyranoside                 |      2 |
 | amoxicillin-clavulanic acid                |      2 |
-| poly(butylene succinate-co-adipate) (PBSA) |      2 |
-| α-hydroxy butyric acid                     |      2 |
+| poly(ε-caprolactone)                       |      2 |
 | N-acetyl-glucosamine                       |      2 |
+| short-chained fatty acids                  |      2 |
+| α-hydroxy butyric acid                     |      2 |
 | soluble phosphorus                         |      2 |
 
 
-### 6e. Process and prompt-instruction gaps
+### 5e. Process and prompt-instruction gaps
 
 
 _Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm._
@@ -656,15 +655,17 @@ _Signals that the extraction agent is not following (or is not given) a consiste
 
 
 
-## 7. Flags
+## 6. Flags
 
 - ⚠️ field `strains` is only 0.5% grounded (5,950 ungrounded rows)
 - ⚠️ kg_edge_count not populated for all 2,147 rows with match_type=kg_microbe_metpo (edge stats missing for this grounding path, not necessarily orphan nodes)
 - ⚠️ 13 rows (all rows, grounded or not) with placeholder labels (unspecified/unknown/NA)
 - ⚠️ 7 distinct 1–2-char labels grounded by synonym (check for symbol/amino-acid collisions, e.g. K→lysine)
+- ⚠️ 11 docs have ≤3 rows (11 with only strain/taxon rows) — check for failed extraction
 - ⚠️ 8 docs mention temperature_observation cues in context but have no temperature_observation row
-- ⚠️ 15 docs mention pH_observation cues in context but have no pH_observation row
+- ⚠️ 29 docs mention pH_observation cues in context but have no pH_observation row
 - ⚠️ 61 docs mention chemical_utilization_object cues in context but have no chemical_utilization_object row
-- ⚠️ 691 mentions with a span boundary inside a token
+- ⚠️ 479 mentions have a span offset error (leading/trailing whitespace inside [[…]])
+- ⚠️ 116 mentions whose span is a substring inside a longer word (locator defect; check original_spans upstream)
 - ⚠️ 314 rows have no original_spans (entity asserted without a located mention)
 - ⚠️ 15 labels typed inconsistently across docs (>1 kind)
