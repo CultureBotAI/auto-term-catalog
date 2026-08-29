@@ -89,8 +89,14 @@ def compose(taxon: str, label: str) -> str:
         return label
     genus, rest = taxon.split(" ", 1)
     ab = f"{genus[0]}. {rest}"
+    if label == ab:
+        return taxon
     if label.startswith(ab + " "):
         return taxon + label[len(ab):]
+    # a different binomial/abbreviation inside the label (`strain Bacillus foo X`, `P. vaginalis X`): leave the
+    # label unchanged rather than produce a double name — the assigned_taxon column still records the inference
+    if re.search(BINOMIAL, label) or re.search(ABBREV, label):
+        return label
     return f"{taxon} {label}"
 
 

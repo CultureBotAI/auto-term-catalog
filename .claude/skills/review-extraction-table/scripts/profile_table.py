@@ -641,10 +641,10 @@ def main() -> int:
     fsn = load_full_scientific_name()
     if fsn is None:
         P("\n_`src/process_terms/full_scientific_name.py` not found relative to this script; skipped._\n")
-    elif not ({"doc", "field", "label", "context"} <= set(df.columns)):
-        P("\n_Requires doc/field/label/context columns; skipped._\n")
+    elif not all(R[k] for k in ("doc", "field", "label", "context")):
+        P("\n_Requires doc/field/label/context roles; skipped._\n")
     else:
-        named = fsn.add_full_names(df)
+        named = fsn.add_full_names(df.rename(columns={R["doc"]: "doc", R["field"]: "field", R["label"]: "label", R["context"]: "context"}))
         stn = named[named["field"] == "strains"]
         n = len(stn)
         if n:
