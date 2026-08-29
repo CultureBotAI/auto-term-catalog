@@ -308,7 +308,7 @@ Create the project (this writes `pyproject.toml` and `.python-version`; `uv add`
 
 ```bash
 uv python install 3.11
-uv init --bare --no-workspace --name auto-term-catalog   # writes pyproject.toml only (no hello-world main.py)
+uv init --bare --python 3.11 --no-workspace --name auto-term-catalog   # pyproject.toml only (no hello-world main.py); --python sets requires-python
 uv python pin 3.11                                        # writes .python-version
 ```
 
