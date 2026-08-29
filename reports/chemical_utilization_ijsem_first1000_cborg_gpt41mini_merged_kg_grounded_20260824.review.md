@@ -499,15 +499,9 @@ _Precision proxies. Each table is a review queue, not a verdict._
 | polysaccharides            | polysaccharide                 | CHEBI:18154   | synonym      |      1 |
 
 
-**Stereo/configuration prefix differs between label and kg_name** (5 unique) — D/L, R/S, cis/trans, α/β flips change the compound (`l-arabinose`→D-arabinose); a label with *no* prefix mapped to a specific enantiomer is listed under no-overlap above, not here:
+**Stereo/configuration prefix differs between label and kg_name** (0 unique) — D/L, R/S, cis/trans, α/β flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate); a label with *no* prefix mapped to a specific enantiomer is listed under no-overlap above, not here:
 
-| label                      | kg_name            | grounded_id   | match_type   |   rows |
-|:---------------------------|:-------------------|:--------------|:-------------|-------:|
-| d-lactic acid              | (R)-lactic acid    | CHEBI:42111   | synonym      |      4 |
-| d-lactate                  | (R)-lactate        | CHEBI:16004   | synonym      |      2 |
-| d-malic acid               | (R)-malic acid     | CHEBI:30796   | synonym      |      2 |
-| d-lactic acid methyl ester | methyl (R)-lactate | CHEBI:74611   | synonym      |      1 |
-| l-lactate                  | (S)-lactate        | CHEBI:16651   | synonym      |      1 |
+_(none)_
 
 
 **kind / kg_category mismatch** (0 unique):
@@ -699,7 +693,6 @@ _Signals that the extraction agent is not following (or is not given) a consiste
 - ⚠️ kg_edge_count not populated for all 2,147 rows with match_type=kg_microbe_metpo (edge stats missing for this grounding path, not necessarily orphan nodes)
 - ⚠️ 13 rows (all rows, grounded or not) with placeholder labels (unspecified/unknown/NA)
 - ⚠️ 7 distinct 1–2-char labels grounded by synonym (check for symbol/amino-acid collisions, e.g. K→lysine)
-- ⚠️ 5 label/kg_name pairs differ in stereo prefix (D/L, R/S, α/β…) — likely wrong enantiomer/isomer
 - ⚠️ 11 docs have ≤3 rows (11 with only strain/taxon rows) — check for failed extraction
 - ⚠️ 8 docs mention temperature_observation cues in context but have no temperature_observation row
 - ⚠️ 29 docs mention pH_observation cues in context but have no pH_observation row

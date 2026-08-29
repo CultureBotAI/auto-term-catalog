@@ -74,10 +74,27 @@ def has(series: pd.Series, rx: re.Pattern) -> pd.Series:
 STEREO_RE = re.compile(r"(?:^|[\s,/-])\(?(DL|LL|DD|dl|ll|dd|[DLdl]|RS|[RS]|\+|meso|cis|trans|alpha|beta|α|β)\)?(?=-)")
 
 
-def stereo_prefixes(x: str) -> set[str]:
-    """Stereo/configuration prefixes in a chemical name, normalised (d→D, l→L, α→alpha …)."""
+STEREO_FAMILY = {"D": "DL", "L": "DL", "DL": "DL", "LL": "DL", "DD": "DL", "meso": "DL",
+                 "R": "RS", "S": "RS", "RS": "RS", "+": "sign", "-": "sign",
+                 "cis": "geo", "trans": "geo", "alpha": "anomer", "beta": "anomer"}
+
+
+def stereo_prefixes(x: str) -> dict[str, set[str]]:
+    """Stereo/configuration prefixes in a chemical name grouped by nomenclature family,
+    normalised (d→D, α→alpha …). D/L and R/S are different systems (D-lactate == (R)-lactate),
+    so a mismatch is only meaningful within one family."""
     norm = {"d": "D", "l": "L", "dl": "DL", "ll": "LL", "dd": "DD", "α": "alpha", "β": "beta"}
-    return {norm.get(m, m) for m in STEREO_RE.findall(x)}
+    out: dict[str, set[str]] = {}
+    for m in STEREO_RE.findall(x):
+        m = norm.get(m, m)
+        out.setdefault(STEREO_FAMILY[m], set()).add(m)
+    return out
+
+
+def stereo_conflict(a: str, b: str) -> bool:
+    """True when a and b carry different prefixes of the same stereo family."""
+    pa, pb = stereo_prefixes(a), stereo_prefixes(b)
+    return any(fam in pb and pa[fam] != pb[fam] for fam in pa)
 
 
 def tokens(x: str) -> set[str]:
@@ -408,13 +425,9 @@ def main() -> int:
         lex2 = df[grounded & df[R["match_type"]].isin(["name", "synonym"])]
         st = []
         for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]]):
-            pl, pk = stereo_prefixes(l), stereo_prefixes(k)
-            if pl and pk and pl != pk and (tokens(l) & tokens(k)):
-                st.append(True)
-            else:
-                st.append(False)
+            st.append(bool(tokens(l) & tokens(k)) and stereo_conflict(l, k))
         stdf = lex2[st][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
-        P(f"\n**Stereo/configuration prefix differs between label and kg_name** ({len(stdf)} unique) — D/L, R/S, cis/trans, α/β flips change the compound (`l-arabinose`→D-arabinose); a label with *no* prefix mapped to a specific enantiomer is listed under no-overlap above, not here:\n")
+        P(f"\n**Stereo/configuration prefix differs between label and kg_name** ({len(stdf)} unique) — D/L, R/S, cis/trans, α/β flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate); a label with *no* prefix mapped to a specific enantiomer is listed under no-overlap above, not here:\n")
         P(md_table(stdf, args.top))
         if len(stdf):
             flags.append(f"{len(stdf)} label/kg_name pairs differ in stereo prefix (D/L, R/S, α/β…) — likely wrong enantiomer/isomer")
