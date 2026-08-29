@@ -11,8 +11,9 @@ Repository covered here:
 - Local checkout example: `~/gitrepos/auto-term-catalog`
 
 > **Platform note:** Parts 1 and 4 are written for **macOS** (Homebrew, `~/.zprofile`, `xcode-select`).
-> On Windows or Linux, use [shell-guide.md](shell-guide.md) for the terminal, Git, Node (nodejs.org LTS) and
-> Python prerequisites, then rejoin this guide at Step 4. Everything from Part 2 onward is platform-neutral.
+> On Windows or Linux, use [shell-guide.md](shell-guide.md) for the terminal, Git and Python checks, install
+> Node yourself from https://nodejs.org (LTS), then rejoin this guide at Step 4. Everything from Part 2 onward
+> is platform-neutral.
 
 ## Current repo state
 
@@ -28,7 +29,8 @@ Still missing:
 
 - `README.md` is one sentence.
 - No `pyproject.toml`, no pinned Python version (`.python-version`), no lockfile.
-- No tests, no CI (`.github/` is empty).
+- No tests, no CI (there is no `.github/` directory).
+- A generated output CSV (`src/process_terms/auto_terms_by_microbe_clean_inferred.csv`) is committed next to the script.
 - No `argparse` CLI for the original script.
 
 That means the intern can install Codex and open the repo today, but Codex will be much more useful after the repo has a basic Python project scaffold.
@@ -120,7 +122,7 @@ brew --version
 
 ### Step 2: Install Node.js
 
-Codex is distributed as an npm package, so the machine needs Node and npm. Use a current **LTS** release (the package declares `node >= 16`; `docs/shell-guide.md` asks for 18+ — Homebrew's `node` satisfies both).
+Codex is distributed as an npm package, so the machine needs Node and npm. Use a current **LTS** release (the package declares `node >= 16`; Homebrew's `node` satisfies that).
 
 Install with Homebrew:
 
@@ -216,7 +218,7 @@ If the machine was previously configured with an API key, switch away from that.
 env | grep OPENAI_API_KEY          # if this prints anything, remove it from ~/.zprofile / ~/.zshrc
 unset OPENAI_API_KEY
 codex logout
-codex login                        # choose "Sign in with ChatGPT"
+codex login                        # opens the ChatGPT browser sign-in directly
 ```
 
 ## Part 2: Clone and open the target repo
@@ -306,7 +308,8 @@ Create the project (this writes `pyproject.toml` and `.python-version`; `uv add`
 
 ```bash
 uv python install 3.11
-uv init --python 3.11 --no-workspace --name auto-term-catalog
+uv init --bare --no-workspace --name auto-term-catalog   # writes pyproject.toml only (no hello-world main.py)
+uv python pin 3.11                                        # writes .python-version
 ```
 
 Add dependencies:
@@ -355,6 +358,7 @@ These are the highest-value fixes:
    - category inference
    - CSV row generation
 5. Add a short real README with setup, usage, and example command lines.
+6. Stop committing the generated CSV next to the script; write outputs to `reports/` or a gitignored path.
 
 ## Part 6: Concrete recommendation for this repo
 
