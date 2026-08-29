@@ -8,7 +8,7 @@ suspicious values, ungrounded-term catalog).
 Usage:
     python profile_table.py TABLE.tsv [--out REPORT.md] [--top N]
 
-Only depends on pandas. Column names are looked up by role so the script
+Depends on pandas and tabulate (for Markdown tables); see requirements.txt. Column names are looked up by role so the script
 tolerates minor schema drift (see ROLE_CANDIDATES).
 """
 from __future__ import annotations
@@ -43,10 +43,12 @@ ROLE_CANDIDATES = {
 }
 
 # Ungrounded-label heuristics used to bucket the catalog
-STRAIN_CODE = re.compile(r"^[A-Z]{1,6}[\s\-]?[A-Za-z0-9\-\.]*\d[A-Za-z0-9\-\.]*T?$")
-MEDIUM_RE = re.compile(r"\b(agar|broth|medium|media|blood|serum|extract|peptone|tryptone)\b", re.I)
-ENZYME_RE = re.compile(r"(ase)$|\b(oxidase|catalase|urease|gelatinase|amylase|lipase)\b", re.I)
-UNSPEC_RE = re.compile(r"unspecified|not specified|unknown|n/?a$", re.I)
+COLLECTION_RE = re.compile(r"^(DSM|DSMZ|ATCC|JCM|KCTC|CGMCC|CCTCC|NBRC|LMG|CECT|NRRL|NCIMB|NCTC|KACC|BCRC|VKM|CIP|CCUG)\b")
+MEDIUM_RE = re.compile(
+    r"\b(agar|broth|medium|media|blood|serum|extract|peptone|tryptone|trypticase|casein|milk|juice|"
+    r"TSB|TSA|BHI|LB|R2A|ISP\s?\d|MRS|Reasoner)\b", re.I)
+ENZYME_RE = re.compile(r"\b\w{3,}(idase|osidase|ase)\b|\b(activity|test|assay)\b", re.I)
+UNSPEC_RE = re.compile(r"^\W*(unspecified|not specified|not stated|unknown|none|n/?a)\W*$", re.I)
 
 
 def resolve(df: pd.DataFrame) -> dict[str, str | None]:
@@ -60,8 +62,10 @@ def resolve(df: pd.DataFrame) -> dict[str, str | None]:
 def bucket_ungrounded(label: str, kind: str) -> str:
     if UNSPEC_RE.search(label):
         return "unspecified/placeholder"
-    if kind in ("strain",) or STRAIN_CODE.match(label.strip()):
-        return "strain designation"
+    if kind == "strain":
+        return "strain (kind=strain)"
+    if COLLECTION_RE.match(label.strip()):
+        return "culture-collection accession"
     if MEDIUM_RE.search(label):
         return "growth medium / component"
     if ENZYME_RE.search(label):
@@ -89,8 +93,14 @@ def main() -> int:
     ap.add_argument("--catalog-out", type=Path, help="also write the ungrounded-term catalog as TSV")
     args = ap.parse_args()
 
-    sep = "\t" if args.table.suffix.lower() in (".tsv", ".tab") else ","
-    df = pd.read_csv(args.table, sep=sep, dtype=str, keep_default_na=False)
+    try:
+        with open(args.table, encoding="utf-8") as fh:
+            header = fh.readline()
+        sep = "\t" if header.count("\t") >= header.count(",") else ","
+        df = pd.read_csv(args.table, sep=sep, dtype=str, keep_default_na=False)
+    except (pd.errors.EmptyDataError, FileNotFoundError) as e:
+        print(f"error: cannot read {args.table}: {e}", file=sys.stderr)
+        return 1
     R = resolve(df)
     missing = [r for r, c in R.items() if c is None]
 
@@ -152,7 +162,7 @@ def main() -> int:
         P(md_table(g[cols].value_counts().reset_index(name="rows"), args.top))
 
     # ---------------- QC ----------------
-    P("\n\n## 3. QC\n")
+    P("\n\n## 3. QC (all rows unless stated)\n")
     flags: list[str] = []
     if R["grounded_id"]:
         grounded = df[R["grounded_id"]] != ""
@@ -196,7 +206,17 @@ def main() -> int:
             ec = pd.to_numeric(df[R["kg_edge_count"]], errors="coerce")
             orphan = grounded & (ec.fillna(0) == 0)
             if orphan.any():
-                flags.append(f"{orphan.sum():,} grounded rows have kg_edge_count=0 (grounded to a node with no edges)")
+                if R["match_type"]:
+                    by, grp = R["match_type"], df[R["match_type"]]
+                else:
+                    by, grp = "grounded_id prefix", df[R["grounded_id"]].str.split(":").str[0]
+                tot = grp[grounded].value_counts()
+                zero = grp[orphan].value_counts()
+                for k, n in zero.items():
+                    if n == tot[k]:
+                        flags.append(f"kg_edge_count not populated for all {n:,} rows with {by}={k} (edge stats missing for this grounding path, not necessarily orphan nodes)")
+                    else:
+                        flags.append(f"{n:,}/{tot[k]:,} grounded rows with {by}={k} have kg_edge_count=0")
 
     # duplicates
     key_cols = [c for c in (R["doc"], R["field"], R["entity_id"], R["spans"]) if c]
@@ -219,9 +239,9 @@ def main() -> int:
         empty_lab = (lab.str.strip() == "").sum()
         if empty_lab:
             flags.append(f"{empty_lab:,} rows with empty label")
-        unspec = lab.str.contains(UNSPEC_RE)
+        unspec = lab.apply(lambda x: bool(UNSPEC_RE.search(x)))
         if unspec.any():
-            flags.append(f"{unspec.sum():,} rows with placeholder labels (unspecified/unknown/NA)")
+            flags.append(f"{unspec.sum():,} rows (all rows, grounded or not) with placeholder labels (unspecified/unknown/NA)")
         long_lab = lab.str.len() > 80
         if long_lab.any():
             flags.append(f"{long_lab.sum():,} labels longer than 80 chars (likely phrases, not terms)")
@@ -242,7 +262,7 @@ def main() -> int:
         ung = df[df[R["grounded_id"]] == ""].copy()
         kind_col = R["kind"] or R["field"]
         ung["bucket"] = [bucket_ungrounded(l, k) for l, k in zip(ung[R["label"]], ung[kind_col] if kind_col else [""] * len(ung))]
-        P("\n\n## 4. Ungrounded-term catalog\n")
+        P("\n\n## 4. Ungrounded-term catalog (rows with empty grounded_id only)\n")
         P(f"\n- Ungrounded rows: {len(ung):,}; unique labels: {ung[R['label']].nunique():,}\n")
         P("\n### By bucket\n")
         P(md_table(ung["bucket"].value_counts().rename_axis("bucket").reset_index(name="rows")))
@@ -256,7 +276,7 @@ def main() -> int:
         cat = ung.groupby([R["label"], "bucket"]).agg(**agg).reset_index().sort_values("rows", ascending=False)
         for b in cat["bucket"].unique():
             sub = cat[cat["bucket"] == b]
-            if b == "strain designation":
+            if b == "strain (kind=strain)":
                 P(f"\n### {b} — {len(sub):,} unique labels (top {min(len(sub), 10)})\n")
                 P(md_table(sub.drop(columns=["bucket"]), 10))
             else:
