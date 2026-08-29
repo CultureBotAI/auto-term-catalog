@@ -7,14 +7,18 @@ designation (`G39T`, `DSM 14988`) and `field == "study_taxa"` rows carry the bin
 paper discusses. Nothing links the two, so the link is inferred from the strain row's
 `context` (mention marked `[[…]]`) using, in priority order:
 
-  1. preceding_binomial  — a binomial immediately precedes the mention
+  1. preceding_binomial  — a binomial (optionally followed by `strain`/punctuation) precedes the mention
                             (`Qipengyuania profundimaris [[G39T]]`); accepted if it (or its
                             abbreviated form `Q. profundimaris`) matches a study_taxa label of
                             the same document, or (`preceding_binomial_genus`) if at least its
-                            genus occurs among the document's study_taxa.
-  2. sp_nov              — `Genus species sp. nov. … (type strain[:] [[X]]` or
-                            `strain [[X]] … Genus species sp. nov.` within one context snippet
-                            with no competing strain designation in between.
+                            genus occurs among the document's study_taxa. `Genus sp. [[X]]`
+                            yields `Genus sp. X` (`preceding_genus_sp`).
+  2. sp_nov              — `Genus species sp./subsp./comb. nov. … (type strain(s)[:] [[X]]`,
+                            `Genus species (type strain, [[X]]`, or `strain [[X]] … Genus species
+                            sp. nov.` within one context snippet with no competing strain
+                            designation in between. The binomial is validated against the
+                            document's study_taxa (exact, abbreviated, or ≤2-edit typo of a
+                            listed species; else same genus).
   3. type_strain_novel   — the snippet says `type strain is/: [[X]]` (or holotype / ex-type
                             culture) but the binomial was cut off by the snippet boundary
                             (`…yangense is proposed. The type strain is [[X]]`). The document's
@@ -28,7 +32,9 @@ paper discusses. Nothing links the two, so the link is inferred from the strain 
 No document-level fallback is used: a document's only study_taxa row is frequently the host
 organism (`Tenebrio molitor`), not the isolate's species.
 
-Rows that no rule resolves keep an empty `full_scientific_name`.
+Rows that no rule resolves keep an empty `full_scientific_name`. A QC warning lists documents
+where one taxon is assigned to several distinct type-strain (`…T`) designations that are not
+`=`-linked in any context.
 
 Usage:
     python full_scientific_name.py TABLE.tsv --out TABLE.full_names.tsv [--strains-only]
@@ -55,15 +61,19 @@ TYPE_STRAIN_MENTION = re.compile(
 NOVEL_TAXON_CTX = re.compile(r"\]\](?: f\.a\.,?)?(?: gen\. nov\.,?)? sp\. nov\.")
 CUT_FRAGMENT = re.compile(r"^\.\.\.(\S*?)(?: f\.a\.,?)?(?: gen\. nov\.,?)? sp\. nov\.|^\.\.\.(\S+) is proposed")
 MENTION = re.compile(r"\[\[(.+?)\]\]")
-PRECEDING = re.compile(rf"({BINOMIAL}|{ABBREV})\s+\[\[")
+PRECEDING = re.compile(rf"({BINOMIAL}|{ABBREV})(?: corrig\.)?[,'’]?\s+(?:strain\s+)?\[\[")
+GENUS_SP = re.compile(r"([A-Z][a-z]{3,}) sp\.\s+(?:strain\s+)?\[\[")
+NOV = r"(?: gen\. nov\.,?)?(?: (?:sp|subsp|comb|nom)\. nov\.)"
 SP_NOV_BEFORE = re.compile(
-    rf"({BINOMIAL})(?: gen\. nov\.,?)?(?: sp\. nov\.)?[^;\[]*?\(?\s*type strain[:,]?\s*(?:is\s+)?(?:strain\s+)?\[\["
+    rf"({BINOMIAL}){NOV}[^;\[]*?\(?\s*type strains?[:,]?\s*(?:is\s+|are\s+)?(?:strain\s+)?\[\["
 )
+TYPE_STRAIN_PAREN = re.compile(rf"({BINOMIAL}) \(type strain[:,]?\s*\[\[")  # `Genus species (type strain, [[X]]`
 SP_NOV_AFTER = re.compile(
     rf"strain\s+\[\[[^\]]+\]\][^;\[]*?(?:as|represents?|is proposed as|be classified as|to accommodate)[^;\[]*?({BINOMIAL})(?: gen\. nov\.,?)? sp\. nov\."
 )
-EQUIV = re.compile(r"([A-Za-z0-9][A-Za-z0-9\-\./ ]{1,30}?T?)\s*\(\s*=\s*\[\[")  # `COJ-58T (=[[KACC 22108T]]`
-EQUIV_CHAIN = re.compile(r"=\s*\[\[")
+# `COJ-58T (=[[KACC 22108T]]`, `H3SJ34-1T=[[JCM 36465T]]`, `type strain lpD01T = [[X]]`: the primary designation
+# is the last one or two whitespace tokens before `(=` / `=`.
+EQUIV = re.compile(r"(\S+(?: \S+)?)\s*\(?\s*=\s*\[\[")
 
 
 def norm_taxon(t: str) -> str:
@@ -105,7 +115,12 @@ def rule_preceding(context: str, full: set[str], abbrev: dict[str, str]) -> tupl
             return hit, "preceding_binomial"
         if not genus_hit and "." not in genus and genus in genera:
             genus_hit = cand
-    return (genus_hit, "preceding_binomial_genus") if genus_hit else ("", "")
+    if genus_hit:
+        return genus_hit, "preceding_binomial_genus"
+    m = GENUS_SP.search(context)
+    if m and m.group(1) not in NON_GENUS and (m.group(1) in genera or not genera):
+        return f"{m.group(1)} sp.", "preceding_genus_sp"
+    return "", ""
 
 
 def rule_type_strain_novel(context: str, label: str, novel: list[str]) -> str:
@@ -125,7 +140,11 @@ def rule_type_strain_novel(context: str, label: str, novel: list[str]) -> str:
             if len(cands) == 1:
                 return cands[0]
         before = snippet.split("[[")[0]
-        if len(novel) == 1 and not re.search(r"\bsp\. nov\.", before) and not re.search(BINOMIAL, before):
+        if (len(novel) == 1
+                and not re.search(r"\b(?:sp|subsp|comb|nom)\. nov\.", before)
+                and not re.search(BINOMIAL, before) and not re.search(ABBREV, before)
+                and not re.search(r"type strain of", before, re.I)
+                and not re.search(BINOMIAL, label) and not re.search(ABBREV, label)):
             # nothing else identifies the species and the paper proposes exactly one
             return novel[0]
     return ""
@@ -138,28 +157,67 @@ def rule_sp_nov(context: str, label: str, full: set[str], abbrev: dict[str, str]
         for rx in (SP_NOV_BEFORE, SP_NOV_AFTER):
             m = rx.search(snippet)
             if m:
-                cand = norm_taxon(m.group(1))
+                cand = validate_binomial(norm_taxon(m.group(1)), full, abbrev)
+                if not cand:
+                    continue
                 # ensure the sp. nov. binomial and the marked strain are the nearest pair (no other designation between)
                 between = snippet[m.start(): m.end()]
-                if len(re.findall(r"\b[A-Z]{1,6}[\-\s]?\d[\w\-\.]*T\b", between.replace(f"[[{label}]]", ""))) > 1:
+                if len(DESIGNATION.findall(between.replace(f"[[{label}]]", ""))) > 1:
                     continue
-                if cand.split(" ")[1] in NON_SPECIES:
-                    continue
-                return cand if cand in full or not full else cand
+                return cand
+        m = TYPE_STRAIN_PAREN.search(snippet)
+        if m and f"[[{label}]]" in snippet[m.start():m.end() + len(label) + 4]:
+            cand = validate_binomial(norm_taxon(m.group(1)), full, abbrev)
+            if cand:
+                return cand
     return ""
+
+
+DESIGNATION = re.compile(r"(?<![\w\-])[A-Za-z]{0,6}[\-_\s]?\d[\w\-\.]*T(?![\w\-])")
+
+
+def validate_binomial(cand: str, full: set[str], abbrev: dict[str, str]) -> str:
+    """Reject prose ('The major'), apply stoplists, and prefer the document's own spelling of the
+    taxon (papers occasionally misspell their own species in one sentence)."""
+    genus, species = cand.split(" ")[0], cand.split(" ")[1]
+    if genus in NON_GENUS or species in NON_SPECIES:
+        return ""
+    hit = expand(cand, full, abbrev)
+    if hit:
+        return hit
+    if full:
+        # fuzzy: same genus and species epithets within edit distance 2 (typo tolerance)
+        for t in full:
+            tg, ts = t.split(" ")[0], t.split(" ")[1]
+            if tg == genus and _lev(ts, species) <= 2:
+                return t
+        # genus known in this document -> accept the candidate as spelled
+        if genus in {t.split(" ")[0] for t in full}:
+            return cand
+        return ""
+    return cand  # document has no usable taxa; trust the pattern
+
+
+def _lev(a: str, b: str) -> int:
+    if abs(len(a) - len(b)) > 2:
+        return 3
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
 
 
 def rule_equivalence(context: str, resolved: dict[str, str]) -> tuple[str, str]:
     """Mention is `X (=[[this]]…)` or `…=[[this]]` — find the primary designation X and its resolved name."""
     for m in EQUIV.finditer(context):
-        primary = m.group(1).strip()
-        if primary in resolved and resolved[primary]:
-            return resolved[primary], primary
-    # chained: `H3SJ34-1T=[[JCM 36465T]]=CGMCC …` — take the token before `=[[`
-    for m in re.finditer(r"([A-Za-z0-9][A-Za-z0-9\-\./ ]{1,30}?)\s*=\s*\[\[", context):
-        primary = m.group(1).strip()
-        if primary in resolved and resolved[primary]:
-            return resolved[primary], primary
+        toks = m.group(1).strip().split(" ")
+        for cand in (" ".join(toks[-2:]), toks[-1]):
+            cand = cand.strip("(),;:=")
+            if cand in resolved and resolved[cand]:
+                return resolved[cand], cand
     return "", ""
 
 
@@ -171,7 +229,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df["full_scientific_name"] = ""
     df["name_source"] = ""
-    df["taxon_label"] = ""
+    df["assigned_taxon"] = ""
 
     taxa_rows = df[df["field"] == "study_taxa"]
     taxa_by_doc = taxa_rows.groupby("doc")["label"].apply(list).to_dict()
@@ -197,7 +255,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
                 taxon = rule_type_strain_novel(ctx, label, novel_by_doc.get(doc, []))
                 src = "type_strain_novel" if taxon else ""
         if taxon:
-            df.at[i, "taxon_label"], df.at[i, "name_source"] = taxon, src
+            df.at[i, "assigned_taxon"], df.at[i, "name_source"] = taxon, src
             df.at[i, "full_scientific_name"] = f"{taxon} {label}"
             resolved_by_doc.setdefault(doc, {})[label] = taxon
 
@@ -212,7 +270,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
                 continue
             taxon, primary = rule_equivalence(ctx, resolved_by_doc.get(doc, {}))
             if taxon:
-                df.at[i, "taxon_label"], df.at[i, "name_source"] = taxon, f"equivalence:{primary}"
+                df.at[i, "assigned_taxon"], df.at[i, "name_source"] = taxon, f"equivalence:{primary}"
                 df.at[i, "full_scientific_name"] = f"{taxon} {label}"
                 resolved_by_doc.setdefault(doc, {})[label] = taxon
                 changed = True
@@ -239,6 +297,18 @@ def main() -> int:
     print(f"strain rows: {n:,}", file=sys.stderr)
     for src, cnt in st["name_source"].str.split(":").str[0].replace("", "(unresolved)").value_counts().items():
         print(f"  {src:20s} {cnt:6,} ({cnt / n * 100:.1f}%)", file=sys.stderr)
+
+    # QC: one taxon -> several distinct T designations in a doc, not '='-linked anywhere
+    res = st[st["full_scientific_name"] != ""]
+    tstr = res[res["label"].str.endswith("T")]
+    for (doc, taxon), grp in tstr.groupby(["doc", "assigned_taxon"]):
+        labs = sorted(set(grp["label"]))
+        if len(labs) < 2:
+            continue
+        ctx = " ".join(df.loc[df["doc"] == doc, "context"])
+        linked = all(any(re.search(rf"{re.escape(a)}\s*\(?=|=\s*\(?\[?\[?{re.escape(a)}", ctx) for a in (l,)) for l in labs)
+        if not linked:
+            print(f"  QC: doc {doc}: {taxon} assigned to {len(labs)} T-strains not '='-linked: {', '.join(labs)}", file=sys.stderr)
 
     if args.strains_only:
         out = st
