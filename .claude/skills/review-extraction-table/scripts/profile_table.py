@@ -71,28 +71,45 @@ def has(series: pd.Series, rx: re.Pattern) -> pd.Series:
     return series.apply(lambda x: bool(rx.search(x)))
 
 
-STEREO_RE = re.compile(r"(?:^|[\s,/-])\(?(DL|LL|DD|dl|ll|dd|[DLdl]|RS|[RS]|\+|meso|cis|trans|alpha|beta|α|β)\)?(?=-)")
-
-
+# A stereo/configuration descriptor followed by a hyphen/en-dash. Handles `D-`, `(R)-`, `(2R,3S)-`,
+# `L(+)-`, `(+)-`, `(−)-`, `cis-`, `(E)-`, `α-`, `DL-`, `meso-`.
+STEREO_RE = re.compile(
+    r"(?:^|[\s,/\-–])"
+    r"(?:"
+    r"(?:\(?(DL|LL|DD|dl|ll|dd|[DLdl]|RS|[RS]|meso|cis|trans|alpha|beta|α|β|[EZ])\)?"
+    r"|\((\d+[RSEZ](?:,\d+[RSEZ])*)\))"
+    r"(?:\(([+\-−±])\))?"
+    r"|\(([+\-−±])\)"
+    r")"
+    r"(?=[\-–])"
+)
 STEREO_FAMILY = {"D": "DL", "L": "DL", "DL": "DL", "LL": "DL", "DD": "DL", "meso": "DL",
-                 "R": "RS", "S": "RS", "RS": "RS", "+": "sign", "-": "sign",
-                 "cis": "geo", "trans": "geo", "alpha": "anomer", "beta": "anomer"}
+                 "R": "RS", "S": "RS", "RS": "RS", "+": "sign", "-": "sign", "±": "sign",
+                 "cis": "geo", "trans": "geo", "E": "geo", "Z": "geo",
+                 "alpha": "alpha/beta", "beta": "alpha/beta"}
 
 
-def stereo_prefixes(x: str) -> dict[str, set[str]]:
-    """Stereo/configuration prefixes in a chemical name grouped by nomenclature family,
-    normalised (d→D, α→alpha …). D/L and R/S are different systems (D-lactate == (R)-lactate),
-    so a mismatch is only meaningful within one family."""
-    norm = {"d": "D", "l": "L", "dl": "DL", "ll": "LL", "dd": "DD", "α": "alpha", "β": "beta"}
-    out: dict[str, set[str]] = {}
-    for m in STEREO_RE.findall(x):
-        m = norm.get(m, m)
-        out.setdefault(STEREO_FAMILY[m], set()).add(m)
+def stereo_prefixes(x: str) -> dict[str, list[str]]:
+    """Stereo/configuration prefixes in a chemical name grouped by nomenclature family, in order of
+    appearance, normalised (d→D, α→alpha, − → -). D/L and R/S are different systems
+    (D-lactate == (R)-lactate), so a mismatch is only meaningful within one family.
+    Locant-qualified descriptors such as (2R,3S) are kept whole in the RS family."""
+    norm = {"d": "D", "l": "L", "dl": "DL", "ll": "LL", "dd": "DD", "α": "alpha", "β": "beta", "−": "-"}
+    out: dict[str, list[str]] = {}
+    for simple, locant, sign, sign2 in STEREO_RE.findall(x):
+        sign = sign or sign2
+        if simple:
+            m = norm.get(simple, simple)
+            out.setdefault(STEREO_FAMILY[m], []).append(m)
+        if locant:
+            out.setdefault("RS", []).append(locant.upper())
+        if sign:
+            out.setdefault("sign", []).append(norm.get(sign, sign))
     return out
 
 
 def stereo_conflict(a: str, b: str) -> bool:
-    """True when a and b carry different prefixes of the same stereo family."""
+    """True when a and b carry different prefixes (order-sensitive) of the same stereo family."""
     pa, pb = stereo_prefixes(a), stereo_prefixes(b)
     return any(fam in pb and pa[fam] != pb[fam] for fam in pa)
 
@@ -427,10 +444,15 @@ def main() -> int:
         for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]]):
             st.append(bool(tokens(l) & tokens(k)) and stereo_conflict(l, k))
         stdf = lex2[st][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
-        P(f"\n**Stereo/configuration prefix differs between label and kg_name** ({len(stdf)} unique) — D/L, R/S, cis/trans, α/β flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate); a label with *no* prefix mapped to a specific enantiomer is listed under no-overlap above, not here:\n")
+        P(f"\n**Stereo/configuration prefix differs between label and kg_name** ({len(stdf)} unique) — D/L, R/S (incl. `(2R,3S)`), (+)/(−), cis/trans/E/Z, α/β (anomeric *or* positional) flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate):\n")
         P(md_table(stdf, args.top))
         if len(stdf):
             flags.append(f"{len(stdf)} label/kg_name pairs differ in stereo prefix (D/L, R/S, α/β…) — likely wrong enantiomer/isomer")
+        one = [bool(tokens(l) & tokens(k)) and bool(stereo_prefixes(l)) != bool(stereo_prefixes(k))
+               for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]])]
+        onedf = lex2[one][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
+        P(f"\n**Stereo prefix on one side only** ({len(onedf)} unique) — a generic label grounded to a specific enantiomer (`maltose`→D-maltose) or vice versa; usually acceptable, listed for completeness:\n")
+        P(md_table(onedf, args.top))
     if R["kg_category"] and kind_col and R["grounded_id"]:
         exp = {"chemical": "ChemicalEntity|ChemicalSubstance|Molecule|Macromolecule", "taxon_candidate": "OrganismTaxon", "phenotype_observation": "OntologyClass", "strain": "OrganismTaxon|strain"}
         mm = []
