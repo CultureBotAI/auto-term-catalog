@@ -68,15 +68,15 @@ Key facts about the format:
      from CHEBI/MediaDive are the interesting ones.
 
    - *Extraction quality (§5)* — these are review queues, not verdicts:
-     - **6a false positives**: read every 1–2-char synonym match (element
+     - **5a false positives**: read every 1–2-char synonym match (element
        symbol vs amino-acid code, e.g. `K`→lysine) and every "no word
        overlap" row (sugars are the classic miss, e.g. `d-glucose`→D-fructose);
        kind/kg_category mismatches should be zero.
-     - **6b noise**: generic class phrases, trait/assay phrases and media in
+     - **5b noise**: generic class phrases, trait/assay phrases and media in
        the chemical slot, placeholders, ≥6-word labels. Decide per bucket
        whether it is a prompt problem (schema says "chemical", agent emits
        "carbon sources") or a legitimate term for a different slot.
-     - **6c recall/truncation**: docs with ≤N rows; docs where a field cue
+     - **5c recall/truncation**: docs with ≤N rows; docs where a field cue
        (°C, pH, NaCl…) appears in *other rows'* context but the field has no
        row; span offset errors (`[[ (optimum pH 7.0]]`); spans that are a
        substring inside a longer word (`glu[[co]]se`, `Pseudo[[dysgonomonas]]`
@@ -84,11 +84,15 @@ Key facts about the format:
        wrong upstream and short symbols like CO/Si/K get bogus mentions);
        rows with no `original_spans`. Only the source abstracts can confirm
        true recall.
-     - **6d METPO/vocabulary gaps**: relationship types without a METPO id;
+     - **5d METPO/vocabulary gaps**: relationship types without a METPO id;
        ungrounded trait-like labels (enzymes, `H2/CO2`) that are phenotypes
        not chemicals; frequent ungrounded specific chemicals (CHEBI synonym
        gaps such as `meso-diaminopimelic acid`, `dl-lactate`).
-     - **6e process/prompt gaps**: placeholder spelling variants (prompt should
+     - **5f strain name resolution**: share of `strains` rows that get a
+       `Genus species STRAIN` name from `src/process_terms/full_scientific_name.py`
+       and the rule breakdown; low resolution usually means the paper's novel
+       species never appears next to its type strain in the extracted contexts.
+     - **5e process/prompt gaps**: placeholder spelling variants (prompt should
        say *omit*), labels typed as more than one `kind`, no provenance
        columns (model/prompt/schema version), case-only label variants.
        Confirm against the actual extraction prompt and schema.

@@ -66,6 +66,20 @@ FIELD_CUES = {  # field -> regex over concatenated context that suggests the slo
 }
 
 
+def load_full_scientific_name():
+    """Import src/process_terms/full_scientific_name.py from the repo this skill lives in, if present."""
+    import importlib.util
+    here = Path(__file__).resolve()
+    for root in here.parents:
+        cand = root / "src" / "process_terms" / "full_scientific_name.py"
+        if cand.exists():
+            spec = importlib.util.spec_from_file_location("full_scientific_name", cand)
+            mod = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(mod)
+            return mod
+    return None
+
+
 def has(series: pd.Series, rx: re.Pattern) -> pd.Series:
     """Boolean mask: regex search on each value (avoids pandas capture-group warning)."""
     return series.apply(lambda x: bool(rx.search(x)))
@@ -621,6 +635,36 @@ def main() -> int:
     if R["label"]:
         distinct = lab.groupby(lab.str.lower()).nunique()
         P(f"- Labels differing only by case: **{(distinct > 1).sum():,}** (no normalization step) e.g. {', '.join(f'`{x}`' for x in distinct[distinct > 1].index[:6])}\n")
+
+    # --- 5f strain name resolution (src/process_terms/full_scientific_name.py) ---
+    P("\n### 5f. Strain name resolution (`Genus species STRAIN`)\n")
+    fsn = load_full_scientific_name()
+    if fsn is None:
+        P("\n_`src/process_terms/full_scientific_name.py` not found relative to this script; skipped._\n")
+    elif not ({"doc", "field", "label", "context"} <= set(df.columns)):
+        P("\n_Requires doc/field/label/context columns; skipped._\n")
+    else:
+        named = fsn.add_full_names(df)
+        stn = named[named["field"] == "strains"]
+        n = len(stn)
+        if n:
+            src = stn["name_source"].str.split(":").str[0].replace("", "(unresolved)").value_counts()
+            tbl = src.rename_axis("rule").reset_index(name="rows")
+            tbl["pct"] = (tbl["rows"] / n * 100).round(1)
+            P(f"\n- Strain rows: {n:,}; resolved: **{(stn['full_scientific_name'] != '').sum():,} ({(stn['full_scientific_name'] != '').mean()*100:.1f}%)**. Rules are applied in priority order (see the script docstring); no document-level fallback.\n")
+            P(md_table(tbl))
+            ex = stn[stn["full_scientific_name"] != ""].drop_duplicates("name_source").head(8)[["label", "full_scientific_name", "name_source"]]
+            P("\n_One example per rule:_\n")
+            P(md_table(ex))
+            multi = stn[stn["full_scientific_name"] != ""].groupby(["doc", "assigned_taxon"])["label"].nunique()
+            multi = multi[multi > 1]
+            P(f"\n- (doc, taxon) pairs assigned to >1 distinct strain label: {len(multi):,} — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.\n")
+            unres = stn[stn["full_scientific_name"] == ""]
+            eq_shape = unres["context"].str.contains(r"=\s*\[\[", regex=True).sum()
+            P(f"- Unresolved rows whose mention is an `=`-linked accession (primary designation itself unresolved): {eq_shape:,} of {len(unres):,}\n")
+            flags.append(f"strain name resolution: {(stn['full_scientific_name'] != '').mean()*100:.1f}% of strain rows get a Genus species STRAIN name")
+        else:
+            P("\n_No strain rows._\n")
 
     # ---------------- FLAGS ----------------
     P("\n\n## 6. Flags\n")
