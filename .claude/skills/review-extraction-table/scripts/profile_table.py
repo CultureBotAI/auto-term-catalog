@@ -653,7 +653,8 @@ def main() -> int:
             tbl["pct"] = (tbl["rows"] / n * 100).round(1)
             P(f"\n- Strain rows: {n:,}; resolved: **{(stn['full_scientific_name'] != '').sum():,} ({(stn['full_scientific_name'] != '').mean()*100:.1f}%)**. Rules are applied in priority order (see the script docstring); no document-level fallback.\n")
             P(md_table(tbl))
-            ex = stn[stn["full_scientific_name"] != ""].drop_duplicates("name_source").head(8)[["label", "full_scientific_name", "name_source"]]
+            ex = stn[stn["full_scientific_name"] != ""].assign(rule=lambda d: d["name_source"].str.split(":").str[0])
+            ex = ex.drop_duplicates("rule")[["label", "full_scientific_name", "name_source"]]
             P("\n_One example per rule:_\n")
             P(md_table(ex))
             multi = stn[stn["full_scientific_name"] != ""].groupby(["doc", "assigned_taxon"])["label"].nunique()

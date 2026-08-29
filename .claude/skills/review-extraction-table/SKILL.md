@@ -88,14 +88,14 @@ Key facts about the format:
        ungrounded trait-like labels (enzymes, `H2/CO2`) that are phenotypes
        not chemicals; frequent ungrounded specific chemicals (CHEBI synonym
        gaps such as `meso-diaminopimelic acid`, `dl-lactate`).
-     - **5f strain name resolution**: share of `strains` rows that get a
-       `Genus species STRAIN` name from `src/process_terms/full_scientific_name.py`
-       and the rule breakdown; low resolution usually means the paper's novel
-       species never appears next to its type strain in the extracted contexts.
      - **5e process/prompt gaps**: placeholder spelling variants (prompt should
        say *omit*), labels typed as more than one `kind`, no provenance
        columns (model/prompt/schema version), case-only label variants.
        Confirm against the actual extraction prompt and schema.
+     - **5f strain name resolution**: share of `strains` rows that get a
+       `Genus species STRAIN` name from `src/process_terms/full_scientific_name.py`
+       and the rule breakdown; low resolution usually means the paper's novel
+       species never appears next to its type strain in the extracted contexts.
 
 3. **Spot-check by hand** — pick ~5 grounded rows and ~5 ungrounded rows per
    field with `grep`/pandas and confirm the grounding is right against the

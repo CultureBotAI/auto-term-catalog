@@ -718,16 +718,14 @@ _Signals that the extraction agent is not following (or is not given) a consiste
 
 _One example per rule:_
 
-| label                        | full_scientific_name                               | name_source               |
-|:-----------------------------|:---------------------------------------------------|:--------------------------|
-| Gardnerella vaginalis 6119V5 | Gardnerella vaginalis Gardnerella vaginalis 6119V5 | preceding_binomial        |
-| Marseille-Q2328T             | Gardnerella massiliensis Marseille-Q2328T          | sp_nov                    |
-| DSM 110680T                  | Occallatibacter bavaricus DSM 110680T              | equivalence:JP12T         |
-| DSM 113832T                  | Chloracidobacterium validum DSM 113832T            | equivalence:BV2-CT        |
-| JCM 39534T                   | Chloracidobacterium validum JCM 39534T             | equivalence:DSM 113832T   |
-| ATCC TSD-447T                | Rothia similimucilaginosa ATCC TSD-447T            | equivalence:RSM42T        |
-| DSM 118581T                  | Rothia similimucilaginosa DSM 118581T              | equivalence:ATCC TSD-447T |
-| RSM42T                       | Rothia similimucilaginosa RSM42T                   | type_strain_novel         |
+| label                        | full_scientific_name                      | name_source              |
+|:-----------------------------|:------------------------------------------|:-------------------------|
+| Gardnerella vaginalis 6119V5 | Gardnerella vaginalis 6119V5              | preceding_binomial       |
+| Marseille-Q2328T             | Gardnerella massiliensis Marseille-Q2328T | sp_nov                   |
+| DSM 110680T                  | Occallatibacter bavaricus DSM 110680T     | equivalence:JP12T        |
+| RSM42T                       | Rothia similimucilaginosa RSM42T          | type_strain_novel        |
+| EGH7T                        | Faecalimonas umbilicata EGH7T             | preceding_binomial_genus |
+| MTP4                         | Methanosarcina sp. MTP4                   | preceding_genus_sp       |
 
 
 - (doc, taxon) pairs assigned to >1 distinct strain label: 400 — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.

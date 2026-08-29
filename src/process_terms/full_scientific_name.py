@@ -81,6 +81,19 @@ SP_NOV_AFTER = re.compile(
 EQUIV = re.compile(r"(\S+(?: \S+)?)\s*\(?\s*=\s*\[\[")
 
 
+def compose(taxon: str, label: str) -> str:
+    """`Genus species STRAIN`; if the label already carries that binomial (`Gardnerella vaginalis 6119V5`)
+    or an abbreviation of it (`G. vaginalis 6119V5`), return the label with the binomial expanded."""
+    label = norm_taxon(label)
+    if label.startswith(taxon + " ") or label == taxon:
+        return label
+    genus, rest = taxon.split(" ", 1)
+    ab = f"{genus[0]}. {rest}"
+    if label.startswith(ab + " "):
+        return taxon + label[len(ab):]
+    return f"{taxon} {label}"
+
+
 def norm_taxon(t: str) -> str:
     return re.sub(r"\s+", " ", t.strip())
 
@@ -260,7 +273,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
                 src = "type_strain_novel" if taxon else ""
         if taxon:
             df.at[i, "assigned_taxon"], df.at[i, "name_source"] = taxon, src
-            df.at[i, "full_scientific_name"] = f"{taxon} {label}"
+            df.at[i, "full_scientific_name"] = compose(taxon, label)
             resolved_by_doc.setdefault(doc, {})[label] = taxon
 
     # pass 2: equivalence (needs earlier results of the same doc); iterate so `A=B=C` chains resolve
@@ -275,7 +288,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
             taxon, primary = rule_equivalence(ctx, resolved_by_doc.get(doc, {}))
             if taxon:
                 df.at[i, "assigned_taxon"], df.at[i, "name_source"] = taxon, f"equivalence:{primary}"
-                df.at[i, "full_scientific_name"] = f"{taxon} {label}"
+                df.at[i, "full_scientific_name"] = compose(taxon, label)
                 resolved_by_doc.setdefault(doc, {})[label] = taxon
                 changed = True
         if not changed:
