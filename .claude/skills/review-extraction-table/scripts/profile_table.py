@@ -246,15 +246,43 @@ def main() -> int:
     # duplicates
     key_cols = [c for c in (R["doc"], R["field"], R["entity_id"], R["spans"]) if c]
     if key_cols:
-        dups = df.duplicated(subset=key_cols, keep=False)
-        P(f"\n- Rows sharing the same mention key {key_cols}: **{dups.sum():,}**\n")
+        # Span-less rows cannot be keyed by mention: exclude them so two distinct un-located
+        # mentions of one entity in one doc are not mistaken for relationship duplicates.
+        located = (df[R["spans"]] != "") if R["spans"] else pd.Series([True] * len(df))
+        dups = df.duplicated(subset=key_cols, keep=False) & located
+        P(f"\n- Located rows sharing the same mention key {key_cols}: **{dups.sum():,}** ({(~located).sum():,} span-less rows excluded from this check)\n")
         if dups.any():
             rel_cols = [c for c in df.columns if c.startswith("relationship_") or c.startswith("chemical_relationship")]
-            differing = [c for c in df.columns if df[dups].groupby(key_cols)[c].nunique().gt(1).any()]
-            if differing and set(differing) <= set(rel_cols) | {R["context"]}:
-                P(f"  - These differ only in relationship columns ({', '.join(differing)}): one row per (mention, relationship) — expected, not a defect.\n")
+            grp = df[dups].groupby(key_cols)
+            differing = [c for c in df.columns if c not in key_cols and grp[c].nunique().gt(1).any()]
+            non_rel = [c for c in differing if c not in rel_cols and c != R["context"]]
+            if non_rel:
+                flags.append(f"{dups.sum():,} rows share a mention key but differ in non-relationship columns: {non_rel}")
+            elif differing:
+                P(f"  - These differ only in relationship columns ({', '.join(c for c in differing if c != R['context'])}): one row per (mention, relationship) — expected, not a defect.\n")
             else:
-                flags.append(f"{dups.sum():,} rows share a mention key but differ in non-relationship columns: {differing}")
+                P("  - Fully identical rows (see count below).\n")
+            # context should be a function of the span; if it differs while the relationship columns
+            # are identical, the same mention was emitted twice with different snippets
+            if R["context"] and R["context"] in differing:
+                same_rel = df[dups].duplicated(subset=key_cols + rel_cols, keep=False)
+                ctx_var = df[dups][same_rel].groupby(key_cols + rel_cols)[R["context"]].nunique().gt(1).sum()
+                if ctx_var:
+                    flags.append(f"{ctx_var:,} mention keys repeat with identical relationship columns but different context (true duplicate emission)")
+                    P(f"  - ⚠️ {ctx_var:,} mention keys repeat with identical relationship columns but different `context`.\n")
+        if R["spans"] and R["doc"] and R["entity_id"]:
+            sl = df[~located]
+            sl_key = [R["doc"], R["entity_id"]] + ([R["field"]] if R["field"] else [])
+            sl_dup = sl.duplicated(subset=sl_key, keep=False)
+            if sl_dup.any():
+                rel_cols = [c for c in df.columns if c.startswith("relationship_") or c.startswith("chemical_relationship")]
+                sl_diff = [c for c in df.columns if c not in sl_key and sl[sl_dup].groupby(sl_key)[c].nunique().gt(1).any()]
+                sl_non_rel = [c for c in sl_diff if c not in rel_cols and c != R["context"]]
+                if sl_non_rel:
+                    P(f"  - Span-less rows repeating the same (doc, field, entity) and differing in non-relationship columns {sl_non_rel}: **{int(sl_dup.sum()):,}** — cannot tell distinct mentions from duplicates without spans.\n")
+                    flags.append(f"{int(sl_dup.sum()):,} span-less rows repeat a (doc, field, entity) with differing {sl_non_rel}")
+                else:
+                    P(f"  - Span-less rows repeating the same (doc, field, entity): **{int(sl_dup.sum()):,}**, differing only in relationship columns — expected expansion.\n")
     full_dups = df.duplicated(keep=False).sum()
     P(f"- Fully identical rows: **{full_dups:,}**\n")
 
@@ -302,8 +330,41 @@ def main() -> int:
         for b in cat["bucket"].unique():
             sub = cat[cat["bucket"] == b]
             if b == "strain (kind=strain)":
-                P(f"\n### {b} — {len(sub):,} unique labels (top {min(len(sub), 10)})\n")
-                P(md_table(sub.drop(columns=["bucket"]), 10))
+                labs = sub[R["label"]].str.strip()
+                n = len(labs)
+                t_suffix = labs.str.fullmatch(r".*\d\s?[Tᵀ]")
+                collection = has(labs, COLLECTION_RE)
+                binomial = labs.str.match(r"[A-Z][a-z]+ (?:[a-z]{2,}|sp\.|aff\. \S+|cf\. \S+) \S")
+                phrase = has(labs, re.compile(r"\b(?:strain|isolate|isolates|clone)\b|_", re.I)) & ~binomial
+                bare = labs.str.fullmatch(r"\S*\d\S*") & ~collection & ~binomial & ~phrase
+                prefixed = labs.str.fullmatch(r"[A-Z][A-Za-z]{1,7}(?:-[A-Z]+)? \S*\d\S*") & ~collection & ~binomial & ~phrase
+                other = ~(collection | binomial | phrase | bare | prefixed)
+                def share(mask: pd.Series) -> str:
+                    return f"{int(mask.sum()):,} ({mask.mean()*100:.1f}%)"
+                part = pd.DataFrame([
+                    {"class (mutually exclusive)": "culture-collection accession (DSM/ATCC/JCM/KCTC/CGMCC/…)", "labels": share(collection)},
+                    {"class (mutually exclusive)": "Genus species / sp. / aff. + designation", "labels": share(binomial & ~collection)},
+                    {"class (mutually exclusive)": "phrase (`strain …`, `13 isolates of …`, `strain_of`)", "labels": share(phrase & ~collection)},
+                    {"class (mutually exclusive)": "bare code, no whitespace (`LC2-13A`, `zg-579T`)", "labels": share(bare)},
+                    {"class (mutually exclusive)": "lab/collection prefix + code, prefix not in COLLECTION_RE (`YIM 65594T`, `MCCC 1K00261T`)", "labels": share(prefixed)},
+                    {"class (mutually exclusive)": "other (with whitespace, no recognised pattern)", "labels": share(other)},
+                ])
+                cross = pd.DataFrame([
+                    {"cross-cutting property": "type-strain suffix `T`/`ᵀ`", "labels": share(t_suffix)},
+                    {"cross-cutting property": "contains whitespace", "labels": share(labs.str.contains(r"\s"))},
+                    {"cross-cutting property": "seen in >1 document", "labels": share(sub["n_docs"] > 1) if "n_docs" in sub else "n/a"},
+                ])
+                P(f"\n### {b} — {n:,} unique labels\n")
+                P("\n_Strain designations are per-paper identifiers; a ranked list is not informative. Composition instead. Base = unique labels in this bucket; the first table is a partition (sums to 100%), the second lists overlapping properties._\n")
+                P(md_table(part))
+                P("")
+                P(md_table(cross))
+                if other.any():
+                    P(f"\n_Examples of 'other':_ {', '.join(f'`{x}`' for x in labs[other].head(8))}\n")
+                if "n_docs" in sub:
+                    multi = sub[sub["n_docs"] > 1].drop(columns=["bucket"])
+                    P(f"\n_Strain labels seen in >1 document (top {min(len(multi), 10)}) — the only ones worth cataloguing:_\n")
+                    P(md_table(multi, 10))
             else:
                 P(f"\n### {b} — {len(sub):,} unique labels (top {min(len(sub), args.top)})\n")
                 P(md_table(sub.drop(columns=["bucket"]), args.top))

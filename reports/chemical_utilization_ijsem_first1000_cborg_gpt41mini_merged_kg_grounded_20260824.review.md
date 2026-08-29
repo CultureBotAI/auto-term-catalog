@@ -219,9 +219,11 @@
 _(none)_
 
 
-- Rows sharing the same mention key ['doc', 'field', 'entity_id', 'original_spans']: **1,634**
+- Located rows sharing the same mention key ['doc', 'field', 'entity_id', 'original_spans']: **1,609** (314 span-less rows excluded from this check)
 
-  - These differ only in relationship columns (context, relationship_subject_id, relationship_subject_label, chemical_relationship, chemical_relationship_id, chemical_relationship_label): one row per (mention, relationship) — expected, not a defect.
+  - These differ only in relationship columns (relationship_subject_id, relationship_subject_label, chemical_relationship, chemical_relationship_id, chemical_relationship_label): one row per (mention, relationship) — expected, not a defect.
+
+  - Span-less rows repeating the same (doc, field, entity): **25**, differing only in relationship columns — expected expansion.
 
 - Fully identical rows: **0**
 
@@ -336,7 +338,32 @@ _(none)_
 | nitrogen-free growth medium                                             |      1 |        1 | chemical_utilization_object | ...vesicles. N2-fixing vesicles are also produced in [[nitrogen-free growth medium]], in addition to hyphae and sporangi |
 
 
-### strain (kind=strain) — 5,846 unique labels (top 10)
+### strain (kind=strain) — 5,846 unique labels
+
+
+_Strain designations are per-paper identifiers; a ranked list is not informative. Composition instead. Base = unique labels in this bucket; the first table is a partition (sums to 100%), the second lists overlapping properties._
+
+| class (mutually exclusive)                                                                | labels        |
+|:------------------------------------------------------------------------------------------|:--------------|
+| culture-collection accession (DSM/ATCC/JCM/KCTC/CGMCC/…)                                  | 2,225 (38.1%) |
+| Genus species / sp. / aff. + designation                                                  | 92 (1.6%)     |
+| phrase (`strain …`, `13 isolates of …`, `strain_of`)                                      | 64 (1.1%)     |
+| bare code, no whitespace (`LC2-13A`, `zg-579T`)                                           | 2,403 (41.1%) |
+| lab/collection prefix + code, prefix not in COLLECTION_RE (`YIM 65594T`, `MCCC 1K00261T`) | 982 (16.8%)   |
+| other (with whitespace, no recognised pattern)                                            | 80 (1.4%)     |
+
+
+| cross-cutting property     | labels        |
+|:---------------------------|:--------------|
+| type-strain suffix `T`/`ᵀ` | 5,009 (85.7%) |
+| contains whitespace        | 3,370 (57.6%) |
+| seen in >1 document        | 97 (1.7%)     |
+
+
+_Examples of 'other':_ `SaT`, `MK-MG`, `MCT`, `MI-GT`, `NCAIM B 02678T`, `MobHT (=DSM 21220T= NBRC 104160T)`, `MobHT`, `MT/JULY 2010T`
+
+
+_Strain labels seen in >1 document (top 10) — the only ones worth cataloguing:_
 
 | label       |   rows |   n_docs | fields   | example_context                                                                                                          |
 |:------------|-------:|---------:|:---------|:-------------------------------------------------------------------------------------------------------------------------|
