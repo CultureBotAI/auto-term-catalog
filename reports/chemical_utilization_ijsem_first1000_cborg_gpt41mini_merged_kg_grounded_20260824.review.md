@@ -5,9 +5,9 @@
 - Columns: 28
 
 
-> **Provenance.** Every number in this report is computed by `.claude/skills/review-extraction-table/scripts/profile_table.py` (git a854581; pandas 2.3.3, Python 3.13.12) — deterministic pandas filters, group-bys and regex matches over the raw table. No count is hand-entered or model-generated; each section states what its check computes, and re-running the command below on the same table reproduces the numbers exactly. Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.
+> **Provenance.** Every number in this report is computed by `.claude/skills/review-extraction-table/scripts/profile_table.py` (git 79b5f8d; pandas 2.3.3, Python 3.13.12) — deterministic pandas filters, group-bys and regex matches over the raw table. No count is hand-entered or model-generated; italic section notes state what the main checks compute, and re-running the command below on the same table reproduces the numbers exactly. §5f is additionally computed by `src/process_terms/full_scientific_name.py` (git fcb7c35). Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.
 >
-> `python .claude/skills/review-extraction-table/scripts/profile_table.py data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv --out <report.md> [--catalog-out <catalog.tsv>] [--top N]`
+> `python .claude/skills/review-extraction-table/scripts/profile_table.py data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv --out <report.md> [--catalog-out <catalog.tsv>] [--top N]` _(paths relative to the repo root)_
 
 
 ## 1. Structure
@@ -706,7 +706,7 @@ _(none)_
 _Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm. Each bullet names its computation so the count can be re-derived from the table._
 
 
-- Placeholder spellings: **6** variants (`<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`) — prompt should say *omit* rather than emit a placeholder, or fix one spelling _(distinct labels matching the anchored regex `unspecified|not specified|not stated|unknown|none|n/a`)_
+- Placeholder spellings: **6** variants (`<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`) — prompt should say *omit* rather than emit a placeholder, or fix one spelling _(distinct labels matching the case-insensitive regex `^\W*(unspecified|not specified|not stated|unknown|none|n/?a)\W*$`)_
 
 - Fields present: ['chemical_utilization_object', 'pH_observation', 'strains', 'study_taxa', 'temperature_observation']; expected-but-absent: none; unexpected: none _(distinct `field` values vs the expected slot list)_
 
@@ -754,7 +754,7 @@ _One example per rule:_
 ## 6. Flags
 
 
-_Each flag is emitted by one of the checks above; its count is defined (and re-derivable) in that section._
+_All flags are computed by this script; most restate a count defined in a section above, a few (e.g. kg_edge_count coverage) are computed directly at flag time._
 
 - ⚠️ field `strains` is only 0.5% grounded (5,950 ungrounded rows)
 - ⚠️ kg_edge_count not populated for all 2,147 rows with match_type=kg_microbe_metpo (edge stats missing for this grounding path, not necessarily orphan nodes)
