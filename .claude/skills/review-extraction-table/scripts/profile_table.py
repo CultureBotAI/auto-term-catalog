@@ -264,7 +264,7 @@ def main() -> int:
     script = Path(__file__).resolve()
     root = repo_root(script)
 
-    def rel(p: Path) -> str:
+    def root_rel(p: Path) -> str:
         p = p.resolve()
         if root is not None and p.is_relative_to(root):
             return str(p.relative_to(root))
@@ -274,15 +274,15 @@ def main() -> int:
             return str(p)
 
     fsn_p = fsn_module_path()
-    fsn_note = f" §5f is additionally computed by `{rel(fsn_p)}` ({git_info(fsn_p)})." if fsn_p else ""
-    P(f"\n> **Provenance.** Every number in this report is computed by `{rel(script)}`"
+    fsn_note = f" §5f is additionally computed by `{root_rel(fsn_p)}` ({git_info(fsn_p)})." if fsn_p else ""
+    P(f"\n> **Provenance.** Every number in this report is computed by `{root_rel(script)}`"
       f" ({git_info(script)}; pandas {pd.__version__}, Python {sys.version.split()[0]})"
       " — deterministic pandas filters, group-bys and regex matches over the raw table."
       " No count is hand-entered or model-generated; italic section notes state what the main checks compute,"
       " and re-running the command below on the same table reproduces the numbers exactly."
       f"{fsn_note}"
       " Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.\n>\n"
-      f"> `python {rel(script)} {rel(args.table)} --out <report.md> [--catalog-out <catalog.tsv>] [--top N]`"
+      f"> `python {root_rel(script)} {root_rel(args.table)} --out <report.md> [--catalog-out <catalog.tsv>] [--top N]`"
       + (" _(paths relative to the repo root)_" if root is not None else "") + "\n")
 
     # ---------------- STRUCTURE ----------------
@@ -757,7 +757,7 @@ def main() -> int:
     elif not all(R[k] for k in ("doc", "field", "label", "context")):
         P("\n_Requires doc/field/label/context roles; skipped._\n")
     else:
-        P(f"\n_Names computed by `{rel(fsn_p)}` ({git_info(fsn_p)}); the module search stops at the repo root._\n")
+        P(f"\n_Names computed by `{root_rel(fsn_p)}` ({git_info(fsn_p)}); the module search stops at the repo root._\n")
         named = fsn.add_full_names(df.rename(columns={R["doc"]: "doc", R["field"]: "field", R["label"]: "label", R["context"]: "context"}))
         stn = named[named["field"] == "strains"]
         n = len(stn)
