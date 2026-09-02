@@ -28,7 +28,13 @@ paper discusses. Nothing links the two, so the link is inferred from the strain 
                             provided nothing before the mention names another taxon (no binomial,
                             abbreviation, `… nov.` or `type strain of`) and the label itself is not
                             a binomial.
-  4. equivalence         — the mention is an `=`-linked synonym of another designation in the
+  4. label_binomial      — the label itself opens with its binomial or an abbreviation of it
+                            (`Gordonia otitidis NBRC 100426T`, `M. smithii DSM 861`): preferred
+                            spelling comes from the document's study_taxa (expand/validate),
+                            else the label is accepted as spelled. Runs only when no context
+                            rule fired, and never on family/order + placeholder-word labels
+                            (`Burkholderiaceae bacterium PBA`) unless the document lists them.
+  5. equivalence         — the mention is an `=`-linked synonym of another designation in the
                             same document (`COJ-58T (=[[KACC 22108T]]`) whose name was resolved
                             by an earlier rule; iterated so chains resolve.
 
@@ -79,6 +85,11 @@ SP_NOV_AFTER = re.compile(
 # `COJ-58T (=[[KACC 22108T]]`, `H3SJ34-1T=[[JCM 36465T]]`, `type strain lpD01T = [[X]]`: the primary designation
 # is the last one or two whitespace tokens before `(=` / `=`.
 EQUIV = re.compile(r"(\S+(?: \S+)?)\s*\(?\s*=\s*\[\[")
+# label opens with a binomial/abbreviation followed by the strain designation
+LABEL_BINOMIAL = re.compile(rf"^({BINOMIAL}|{ABBREV})['’]?\s+(\S.*)$")
+# words that make a label-only candidate a taxon placeholder, not a binomial
+NON_SPECIES_IN_LABEL = {"bacterium", "bacteria", "archaeon", "archaea", "cyanobacterium",
+                        "proteobacterium", "actinobacterium", "endosymbiont", "symbiont", "subdivision"}
 
 
 def compose(taxon: str, label: str) -> str:
@@ -233,6 +244,32 @@ def _lev(a: str, b: str) -> int:
     return prev[-1]
 
 
+def rule_label_binomial(label: str, full: set[str], abbrev: dict[str, str]) -> str:
+    """The label itself opens with its binomial (`Gordonia otitidis NBRC 100426T`,
+    `M. smithii DSM 861`): prefer the document's spelling of that taxon, else accept as spelled."""
+    m = LABEL_BINOMIAL.match(norm_taxon(label))
+    if not m:
+        return ""
+    cand, rest = norm_taxon(m.group(1)), m.group(2)
+    if rest.startswith("subsp."):
+        return ""  # bare trinomial: the optional subsp. group backtracked into the remainder, no designation
+    genus, species = cand.split(" ")[0], cand.split(" ")[1]
+    if genus in NON_GENUS or species in NON_SPECIES:
+        return ""
+    # a second binomial in the remainder means the label names several organisms — skip
+    if re.search(BINOMIAL, rest) or re.search(ABBREV, rest):
+        return ""
+    hit = expand(cand, full, abbrev)
+    if hit:
+        return hit
+    # without the document's backing, reject placeholder species words and family/order names
+    if species in NON_SPECIES_IN_LABEL or genus.endswith(("aceae", "ales")):
+        return ""
+    # accept as spelled: for a label-carried binomial the label is stronger evidence than a
+    # fuzzy (lev<=2) match to a doc taxon, which could silently substitute a sister species
+    return cand
+
+
 def rule_equivalence(context: str, resolved: dict[str, str]) -> tuple[str, str]:
     """Mention is `X (=[[this]]…)` or `…=[[this]]` — find the primary designation X and its resolved name."""
     for m in EQUIV.finditer(context):
@@ -263,7 +300,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
     )
     strain_idx = df.index[df["field"] == "strains"]
 
-    # pass 1: rules 1-2 and 4
+    # pass 1: rules 1-4
     resolved_by_doc: dict[str, dict[str, str]] = {}
     for i in strain_idx:
         doc, label, ctx = df.at[i, "doc"], df.at[i, "label"], df.at[i, "context"]
@@ -277,6 +314,9 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
             if not taxon:
                 taxon = rule_type_strain_novel(ctx, label, novel_by_doc.get(doc, []))
                 src = "type_strain_novel" if taxon else ""
+        if not taxon:  # needs no context: the label itself carries the binomial
+            taxon = rule_label_binomial(label, full, abbrev)
+            src = "label_binomial" if taxon else ""
         if taxon:
             df.at[i, "assigned_taxon"], df.at[i, "name_source"] = taxon, src
             df.at[i, "full_scientific_name"] = compose(taxon, label)
@@ -330,6 +370,9 @@ def main() -> int:
     tstr = res[res["label"].str.endswith("T")]
     for (doc, taxon), grp in tstr.groupby(["doc", "assigned_taxon"]):
         labs = sorted(set(grp["label"]))
+        # a label that is a whitespace-suffix of another (`CBS 10308T` vs
+        # `Fonsecazyma mujuensis CBS 10308T`) is the same strain, not a conflict
+        labs = [l for l in labs if not any(o != l and o.endswith(" " + l) for o in labs)]
         if len(labs) < 2:
             continue
         ctx = " ".join(df.loc[df["doc"] == doc, "context"])
