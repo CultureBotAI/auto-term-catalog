@@ -5,6 +5,11 @@
 - Columns: 28
 
 
+> **Provenance.** Every number in this report is computed by `.claude/skills/review-extraction-table/scripts/profile_table.py` (git 79b5f8d; pandas 2.3.3, Python 3.13.12) — deterministic pandas filters, group-bys and regex matches over the raw table. No count is hand-entered or model-generated; italic section notes state what the main checks compute, and re-running the command below on the same table reproduces the numbers exactly. §5f is additionally computed by `src/process_terms/full_scientific_name.py` (git fcb7c35). Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.
+>
+> `python .claude/skills/review-extraction-table/scripts/profile_table.py data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv --out <report.md> [--catalog-out <catalog.tsv>] [--top N]` _(paths relative to the repo root)_
+
+
 ## 1. Structure
 
 ### Columns
@@ -698,18 +703,18 @@ _(none)_
 ### 5e. Process and prompt-instruction gaps
 
 
-_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm._
+_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm. Each bullet names its computation so the count can be re-derived from the table._
 
 
-- Placeholder spellings: **6** variants (`<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`) — prompt should say *omit* rather than emit a placeholder, or fix one spelling
+- Placeholder spellings: **6** variants (`<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`) — prompt should say *omit* rather than emit a placeholder, or fix one spelling _(distinct labels matching the case-insensitive regex `^\W*(unspecified|not specified|not stated|unknown|none|n/?a)\W*$`)_
 
-- Fields present: ['chemical_utilization_object', 'pH_observation', 'strains', 'study_taxa', 'temperature_observation']; expected-but-absent: none; unexpected: none
+- Fields present: ['chemical_utilization_object', 'pH_observation', 'strains', 'study_taxa', 'temperature_observation']; expected-but-absent: none; unexpected: none _(distinct `field` values vs the expected slot list)_
 
-- Labels assigned to more than one `kind` across documents: **15** (inconsistent typing) e.g. `(unspecified)`, `Alt4`, `Burkholderiaceae bacterium PBA`, `CGMCC 1.18055T`, `CGMCC 1.18060T`, `Candida aff. naeodendra/diddensiae Y151`, `Candida sp. GE19S08`, `KCTC 25793T`
+- Labels assigned to more than one `kind` across documents: **15** (inconsistent typing) e.g. `(unspecified)`, `Alt4`, `Burkholderiaceae bacterium PBA`, `CGMCC 1.18055T`, `CGMCC 1.18060T`, `Candida aff. naeodendra/diddensiae Y151`, `Candida sp. GE19S08`, `KCTC 25793T` _(group rows by label, count labels with >1 distinct `kind`)_
 
-- Provenance columns (model/prompt/schema/version): **none** — add them upstream so results can be tied to a run
+- Provenance columns (model/prompt/schema/version): **none** — add them upstream so results can be tied to a run _(column names searched for model/prompt/schema/version/run)_
 
-- Labels differing only by case: **1** (no normalization step) e.g. `[not specified]`
+- Labels differing only by case: **1** (no normalization step) e.g. `[not specified]` _(lowercased labels with >1 distinct original spelling)_
 
 
 ### 5f. Strain name resolution (`Genus species STRAIN`)
@@ -747,6 +752,9 @@ _One example per rule:_
 
 
 ## 6. Flags
+
+
+_All flags are computed by this script; most restate a count defined in a section above, a few (e.g. kg_edge_count coverage) are computed directly at flag time._
 
 - ⚠️ field `strains` is only 0.5% grounded (5,950 ungrounded rows)
 - ⚠️ kg_edge_count not populated for all 2,147 rows with match_type=kg_microbe_metpo (edge stats missing for this grounding path, not necessarily orphan nodes)

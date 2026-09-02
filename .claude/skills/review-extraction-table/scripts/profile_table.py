@@ -14,7 +14,9 @@ tolerates minor schema drift (see ROLE_CANDIDATES).
 from __future__ import annotations
 
 import argparse
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -66,18 +68,55 @@ FIELD_CUES = {  # field -> regex over concatenated context that suggests the slo
 }
 
 
+def fsn_module_path() -> Path | None:
+    """Locate src/process_terms/full_scientific_name.py in the repo this skill lives in."""
+    for root in Path(__file__).resolve().parents:
+        cand = root / "src" / "process_terms" / "full_scientific_name.py"
+        if cand.exists():
+            return cand
+    return None
+
+
 def load_full_scientific_name():
     """Import src/process_terms/full_scientific_name.py from the repo this skill lives in, if present."""
     import importlib.util
-    here = Path(__file__).resolve()
-    for root in here.parents:
-        cand = root / "src" / "process_terms" / "full_scientific_name.py"
-        if cand.exists():
-            spec = importlib.util.spec_from_file_location("full_scientific_name", cand)
-            mod = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(mod)
-            return mod
-    return None
+    cand = fsn_module_path()
+    if cand is None:
+        return None
+    spec = importlib.util.spec_from_file_location("full_scientific_name", cand)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def git_info(path: Path) -> str:
+    """'git <shorthash>[ + local edits]' for the last commit touching `path`; 'unknown'
+    when git is unavailable, the path is outside a repo, or the file is untracked."""
+    try:
+        log = subprocess.run(["git", "-C", str(path.parent), "log", "-1", "--format=%h", "--", path.name],
+                             capture_output=True, text=True, timeout=10)
+        if log.returncode != 0 or not log.stdout.strip():
+            return "unknown"
+        info = "git " + log.stdout.strip()
+    except Exception:
+        return "unknown"
+    try:
+        st = subprocess.run(["git", "-C", str(path.parent), "status", "--porcelain", "--", path.name],
+                            capture_output=True, text=True, timeout=10)
+        if st.returncode == 0 and st.stdout.strip():
+            info += " + local edits"
+    except Exception:
+        info += ", edit state unknown"
+    return info
+
+
+def repo_root(path: Path) -> Path | None:
+    try:
+        r = subprocess.run(["git", "-C", str(path.parent), "rev-parse", "--show-toplevel"],
+                           capture_output=True, text=True, timeout=10)
+        return Path(r.stdout.strip()) if r.returncode == 0 and r.stdout.strip() else None
+    except Exception:
+        return None
 
 
 def has(series: pd.Series, rx: re.Pattern) -> pd.Series:
@@ -216,6 +255,31 @@ def main() -> int:
     P = L.append
     P(f"# Extraction table review: `{args.table.name}`\n")
     P(f"- Size on disk: {args.table.stat().st_size/1e6:.1f} MB\n- Rows: {len(df):,}\n- Columns: {len(df.columns)}\n")
+
+    # ---------------- PROVENANCE ----------------
+    script = Path(__file__).resolve()
+    root = repo_root(script)
+
+    def rel(p: Path) -> str:
+        p = p.resolve()
+        if root is not None and p.is_relative_to(root):
+            return str(p.relative_to(root))
+        try:
+            return os.path.relpath(p)
+        except ValueError:  # different drive on Windows
+            return str(p)
+
+    fsn_p = fsn_module_path()
+    fsn_note = f" §5f is additionally computed by `{rel(fsn_p)}` ({git_info(fsn_p)})." if fsn_p else ""
+    P(f"\n> **Provenance.** Every number in this report is computed by `{rel(script)}`"
+      f" ({git_info(script)}; pandas {pd.__version__}, Python {sys.version.split()[0]})"
+      " — deterministic pandas filters, group-bys and regex matches over the raw table."
+      " No count is hand-entered or model-generated; italic section notes state what the main checks compute,"
+      " and re-running the command below on the same table reproduces the numbers exactly."
+      f"{fsn_note}"
+      " Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.\n>\n"
+      f"> `python {rel(script)} {rel(args.table)} --out <report.md> [--catalog-out <catalog.tsv>] [--top N]`"
+      + (" _(paths relative to the repo root)_" if root is not None else "") + "\n")
 
     # ---------------- STRUCTURE ----------------
     P("\n## 1. Structure\n")
@@ -663,23 +727,23 @@ def main() -> int:
 
     # --- 6e process / prompt gaps ---
     P("\n### 5e. Process and prompt-instruction gaps\n")
-    P("\n_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm._\n")
+    P("\n_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm. Each bullet names its computation so the count can be re-derived from the table._\n")
     ph = lab[lab.apply(lambda x: bool(UNSPEC_RE.search(x)))].value_counts()
-    P(f"\n- Placeholder spellings: **{len(ph)}** variants ({', '.join(f'`{v}`' for v in ph.index[:8])}) — prompt should say *omit* rather than emit a placeholder, or fix one spelling\n")
+    P(f"\n- Placeholder spellings: **{len(ph)}** variants ({', '.join(f'`{v}`' for v in ph.index[:8])}) — prompt should say *omit* rather than emit a placeholder, or fix one spelling _(distinct labels matching the case-insensitive regex `{UNSPEC_RE.pattern}`)_\n")
     if R["field"]:
         present = set(df[R["field"]].unique())
-        P(f"- Fields present: {sorted(present)}; expected-but-absent: {sorted(EXPECTED_FIELDS - present) or 'none'}; unexpected: {sorted(present - EXPECTED_FIELDS) or 'none'}\n")
+        P(f"- Fields present: {sorted(present)}; expected-but-absent: {sorted(EXPECTED_FIELDS - present) or 'none'}; unexpected: {sorted(present - EXPECTED_FIELDS) or 'none'} _(distinct `{R['field']}` values vs the expected slot list)_\n")
     if kind_col and R["label"]:
         multi_kind = df.groupby(R["label"])[kind_col].nunique()
         multi_kind = multi_kind[multi_kind > 1]
-        P(f"- Labels assigned to more than one `{kind_col}` across documents: **{len(multi_kind):,}** (inconsistent typing) e.g. {', '.join(f'`{x}`' for x in multi_kind.index[:8])}\n")
+        P(f"- Labels assigned to more than one `{kind_col}` across documents: **{len(multi_kind):,}** (inconsistent typing) e.g. {', '.join(f'`{x}`' for x in multi_kind.index[:8])} _(group rows by label, count labels with >1 distinct `{kind_col}`)_\n")
         if len(multi_kind):
             flags.append(f"{len(multi_kind):,} labels typed inconsistently across docs (>1 {kind_col})")
     prov = [c for c in df.columns if re.search(r"model|prompt|schema|version|run", c, re.I)]
-    P(f"- Provenance columns (model/prompt/schema/version): **{prov or 'none'}** — add them upstream so results can be tied to a run\n")
+    P(f"- Provenance columns (model/prompt/schema/version): **{prov or 'none'}** — add them upstream so results can be tied to a run _(column names searched for model/prompt/schema/version/run)_\n")
     if R["label"]:
         distinct = lab.groupby(lab.str.lower()).nunique()
-        P(f"- Labels differing only by case: **{(distinct > 1).sum():,}** (no normalization step) e.g. {', '.join(f'`{x}`' for x in distinct[distinct > 1].index[:6])}\n")
+        P(f"- Labels differing only by case: **{(distinct > 1).sum():,}** (no normalization step) e.g. {', '.join(f'`{x}`' for x in distinct[distinct > 1].index[:6])} _(lowercased labels with >1 distinct original spelling)_\n")
 
     # --- 5f strain name resolution (src/process_terms/full_scientific_name.py) ---
     P("\n### 5f. Strain name resolution (`Genus species STRAIN`)\n")
@@ -714,6 +778,7 @@ def main() -> int:
 
     # ---------------- FLAGS ----------------
     P("\n\n## 6. Flags\n")
+    P("\n_All flags are computed by this script; most restate a count defined in a section above, a few (e.g. kg_edge_count coverage) are computed directly at flag time._\n")
     if flags:
         for f in flags:
             P(f"- ⚠️ {f}")
