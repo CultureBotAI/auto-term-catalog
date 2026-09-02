@@ -5,7 +5,7 @@
 - Columns: 28
 
 
-> **Provenance.** Every number in this report is computed by `.claude/skills/review-extraction-table/scripts/profile_table.py` (git f26645b; pandas 2.3.3, Python 3.13.12) — deterministic pandas filters, group-bys and regex matches over the raw table. No count is hand-entered or model-generated; italic section notes state what the main checks compute, and re-running the command below on the same table reproduces the numbers exactly. §5f is additionally computed by `src/process_terms/full_scientific_name.py` (git 508a41c). Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.
+> **Provenance.** Every number in this report is computed by `.claude/skills/review-extraction-table/scripts/profile_table.py` (git abb72f4; pandas 2.3.3, Python 3.13.12) — deterministic pandas filters, group-bys and regex matches over the raw table. No count is hand-entered or model-generated; italic section notes state what the main checks compute, and re-running the command below on the same table reproduces the numbers exactly. §5f is additionally computed by `src/process_terms/full_scientific_name.py` (git abb72f4). Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.
 >
 > `python .claude/skills/review-extraction-table/scripts/profile_table.py data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv --out <report.md> [--catalog-out <catalog.tsv>] [--top N]` _(paths relative to the repo root)_
 
@@ -720,7 +720,7 @@ _Signals that the extraction agent is not following (or is not given) a consiste
 ### 5f. Strain name resolution (`Genus species STRAIN`)
 
 
-_Names computed by `src/process_terms/full_scientific_name.py` (git 508a41c); the module search stops at the repo root._
+_Names computed by `src/process_terms/full_scientific_name.py` (git abb72f4); the module search stops at the repo root._
 
 
 - Strain rows: 5,980; resolved: **2,724 (45.6%)**. Rules are applied in priority order (see the script docstring); no document-level fallback.
@@ -750,7 +750,7 @@ _One example per rule:_
 | MTP4                         | Methanosarcina sp. MTP4                   | preceding_genus_sp       |
 
 
-- (doc, taxon) pairs assigned to >1 distinct strain label: 409 — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.
+- (doc, taxon) pairs assigned to >1 distinct strain label (suffix spellings of one label collapsed): 403 — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.
 
 - Unresolved rows whose mention is an `=`-linked accession (primary designation itself unresolved): 1,667 of 3,256
 
