@@ -9,36 +9,36 @@
 
 ### Columns
 
-| column                           |   non_empty | pct_non_empty   |   n_unique | example                                                      |
-|:---------------------------------|------------:|:----------------|-----------:|:-------------------------------------------------------------|
-| doc                              |       14982 | 100.0%          |       1000 | 1                                                            |
-| source_file                      |       14982 | 100.0%          |       1000 | 00001-41779015-abstract.txt                                  |
-| pmid                             |       14982 | 100.0%          |       1000 | 41779015                                                     |
-| field                            |       14982 | 100.0%          |          5 | strains                                                      |
-| kind                             |       14982 | 100.0%          |          4 | strain                                                       |
-| entity_id                        |       14982 | 100.0%          |      11006 | AUTO:Gardnerella%20vaginalis%201400E                         |
-| label                            |       14982 | 100.0%          |      11006 | Gardnerella vaginalis 1400E                                  |
-| original_spans                   |       14668 | 97.9%           |      12321 | 1040:1067                                                    |
-| context                          |       14668 | 97.9%           |      13803 | ...T, Marseille-QA0894T and Marseille-Q2328T against [[Gardn |
-| relationship_subject_id          |        4886 | 32.6%           |       1061 | AUTO:Ax23T                                                   |
-| relationship_subject_label       |        4886 | 32.6%           |       1061 | Ax23T                                                        |
-| chemical_relationship            |        4886 | 32.6%           |         24 | produces                                                     |
-| chemical_level_type              |        4886 | 32.6%           |          6 | chemical_name                                                |
-| chemical_base_label              |        4886 | 32.6%           |        557 | CH4                                                          |
-| chebi_label                      |        2352 | 15.7%           |        671 | CH4                                                          |
-| chemicals_utilized               |       14982 | 100.0%          |          2 | 0                                                            |
-| study_taxa                       |       14982 | 100.0%          |          2 | 0                                                            |
-| strains                          |       14982 | 100.0%          |          2 | 1                                                            |
-| chemical_relationship_id         |        4886 | 32.6%           |         24 | METPO:2000202                                                |
-| chemical_relationship_label      |        4886 | 32.6%           |         24 | produces                                                     |
-| chemical_relationship_match_type |        4886 | 32.6%           |          3 | label                                                        |
-| grounded_id                      |        8263 | 55.2%           |       3744 | NCBITaxon:698956                                             |
-| grounded_ids                     |        8263 | 55.2%           |       3755 | NCBITaxon:698956                                             |
-| kg_name                          |        8263 | 55.2%           |       4050 | Gardnerella vaginalis 1400E                                  |
-| kg_category                      |        8263 | 55.2%           |         14 | biolink:OrganismTaxon                                        |
-| match_type                       |        8263 | 55.2%           |          6 | name                                                         |
-| kg_edge_count                    |       14982 | 100.0%          |        329 | 9                                                            |
-| kg_edge_evidence                 |        6116 | 40.8%           |       3433 | out:biolink:subclass_of:NCBITaxon:2702|out:biolink:has_pheno |
+| column                           |   non_empty | pct_non_empty   |   n_unique | example                                                       |
+|:---------------------------------|------------:|:----------------|-----------:|:--------------------------------------------------------------|
+| doc                              |       14982 | 100.0%          |       1000 | 1                                                             |
+| source_file                      |       14982 | 100.0%          |       1000 | 00001-41779015-abstract.txt                                   |
+| pmid                             |       14982 | 100.0%          |       1000 | 41779015                                                      |
+| field                            |       14982 | 100.0%          |          5 | strains                                                       |
+| kind                             |       14982 | 100.0%          |          4 | strain                                                        |
+| entity_id                        |       14982 | 100.0%          |      11006 | AUTO:Gardnerella%20vaginalis%201400E                          |
+| label                            |       14982 | 100.0%          |      11006 | Gardnerella vaginalis 1400E                                   |
+| original_spans                   |       14668 | 97.9%           |      12321 | 1040:1067                                                     |
+| context                          |       14668 | 97.9%           |      13803 | ...T, Marseille-QA0894T and Marseille-Q2328T against [[Gardn  |
+| relationship_subject_id          |        4886 | 32.6%           |       1061 | AUTO:Ax23T                                                    |
+| relationship_subject_label       |        4886 | 32.6%           |       1061 | Ax23T                                                         |
+| chemical_relationship            |        4886 | 32.6%           |         24 | produces                                                      |
+| chemical_level_type              |        4886 | 32.6%           |          6 | chemical_name                                                 |
+| chemical_base_label              |        4886 | 32.6%           |        557 | CH4                                                           |
+| chebi_label                      |        2352 | 15.7%           |        671 | CH4                                                           |
+| chemicals_utilized               |       14982 | 100.0%          |          2 | 0                                                             |
+| study_taxa                       |       14982 | 100.0%          |          2 | 0                                                             |
+| strains                          |       14982 | 100.0%          |          2 | 1                                                             |
+| chemical_relationship_id         |        4886 | 32.6%           |         24 | METPO:2000202                                                 |
+| chemical_relationship_label      |        4886 | 32.6%           |         24 | produces                                                      |
+| chemical_relationship_match_type |        4886 | 32.6%           |          3 | label                                                         |
+| grounded_id                      |        8263 | 55.2%           |       3744 | NCBITaxon:698956                                              |
+| grounded_ids                     |        8263 | 55.2%           |       3755 | NCBITaxon:698956                                              |
+| kg_name                          |        8263 | 55.2%           |       4050 | Gardnerella vaginalis 1400E                                   |
+| kg_category                      |        8263 | 55.2%           |         14 | biolink:OrganismTaxon                                         |
+| match_type                       |        8263 | 55.2%           |          6 | name                                                          |
+| kg_edge_count                    |       14982 | 100.0%          |        329 | 9                                                             |
+| kg_edge_evidence                 |        6116 | 40.8%           |       3433 | out:biolink:subclass_of:NCBITaxon:2702\|out:biolink:has_pheno |
 
 
 - Documents: 1,000
@@ -84,22 +84,22 @@
 
 ### `kg_category`
 
-| kg_category                                                            |   rows |
-|:-----------------------------------------------------------------------|-------:|
-| (empty)                                                                |   6719 |
-| biolink:OrganismTaxon                                                  |   3689 |
-| biolink:OntologyClass                                                  |   2147 |
-| biolink:ChemicalEntity|biolink:ChemicalSubstance|biolink:SmallMolecule |   1209 |
-| biolink:ChemicalEntity|biolink:SmallMolecule                           |    856 |
-| biolink:SmallMolecule                                                  |    110 |
-| biolink:ChemicalEntity                                                 |     90 |
-| biolink:ChemicalEntity|biolink:Macromolecule                           |     79 |
-| biolink:ChemicalSubstance|biolink:SmallMolecule                        |     62 |
-| biolink:ChemicalEntity|biolink:ChemicalSubstance|biolink:Macromolecule |     14 |
-| biolink:ChemicalRole|biolink:ChemicalSubstance                         |      3 |
-| biolink:ChemicalSubstance|biolink:Macromolecule                        |      2 |
-| biolink:AnatomicalEntity|biolink:ChemicalEntity                        |      1 |
-| biolink:ChemicalRole|biolink:SmallMolecule                             |      1 |
+| kg_category                                                              |   rows |
+|:-------------------------------------------------------------------------|-------:|
+| (empty)                                                                  |   6719 |
+| biolink:OrganismTaxon                                                    |   3689 |
+| biolink:OntologyClass                                                    |   2147 |
+| biolink:ChemicalEntity\|biolink:ChemicalSubstance\|biolink:SmallMolecule |   1209 |
+| biolink:ChemicalEntity\|biolink:SmallMolecule                            |    856 |
+| biolink:SmallMolecule                                                    |    110 |
+| biolink:ChemicalEntity                                                   |     90 |
+| biolink:ChemicalEntity\|biolink:Macromolecule                            |     79 |
+| biolink:ChemicalSubstance\|biolink:SmallMolecule                         |     62 |
+| biolink:ChemicalEntity\|biolink:ChemicalSubstance\|biolink:Macromolecule |     14 |
+| biolink:ChemicalRole\|biolink:ChemicalSubstance                          |      3 |
+| biolink:ChemicalSubstance\|biolink:Macromolecule                         |      2 |
+| biolink:AnatomicalEntity\|biolink:ChemicalEntity                         |      1 |
+| biolink:ChemicalRole\|biolink:SmallMolecule                              |      1 |
 
 
 ### `chemical_level_type`
@@ -162,38 +162,38 @@
 
 ### Top grounded terms (top 30)
 
-| label                      | grounded_id   | kg_category                                                            | match_type       |   rows |
-|:---------------------------|:--------------|:-----------------------------------------------------------------------|:-----------------|-------:|
-| NaCl                       | CHEBI:26710   | biolink:ChemicalEntity|biolink:ChemicalSubstance|biolink:SmallMolecule | synonym          |    367 |
-| pH optimum 7.0             | METPO:1001013 | biolink:OntologyClass                                                  | kg_microbe_metpo |    143 |
-| temperature optimum 30 °C  | METPO:1001001 | biolink:OntologyClass                                                  | kg_microbe_metpo |    128 |
-| glucose                    | CHEBI:17234   | biolink:ChemicalEntity|biolink:SmallMolecule                           | name             |     77 |
-| temperature optimum 37 °C  | METPO:1001001 | biolink:OntologyClass                                                  | kg_microbe_metpo |     74 |
-| temperature optimum 28 °C  | METPO:1001001 | biolink:OntologyClass                                                  | kg_microbe_metpo |     73 |
-| temperature optimum 25 °C  | METPO:1001001 | biolink:OntologyClass                                                  | kg_microbe_metpo |     51 |
-| pH range 6.0-9.0           | METPO:1001015 | biolink:OntologyClass                                                  | kg_microbe_metpo |     50 |
-| pH optimum 8.0             | METPO:1001013 | biolink:OntologyClass                                                  | kg_microbe_metpo |     36 |
-| temperature range 15-37 °C | METPO:1001003 | biolink:OntologyClass                                                  | kg_microbe_metpo |     36 |
-| acetate                    | CHEBI:30089   | biolink:ChemicalEntity|biolink:SmallMolecule                           | name             |     34 |
-| temperature range 10-40 °C | METPO:1001003 | biolink:OntologyClass                                                  | kg_microbe_metpo |     32 |
-| nitrate                    | CHEBI:17632   | biolink:ChemicalEntity|biolink:ChemicalSubstance|biolink:SmallMolecule | name             |     32 |
-| pH range 6.0-10.0          | METPO:1001015 | biolink:OntologyClass                                                  | kg_microbe_metpo |     32 |
-| methanol                   | CHEBI:17790   | biolink:ChemicalEntity|biolink:ChemicalSubstance|biolink:SmallMolecule | name             |     30 |
-| ribose                     | CHEBI:33942   | biolink:ChemicalEntity|biolink:SmallMolecule                           | name             |     28 |
-| pH range 6.0-8.0           | METPO:1001015 | biolink:OntologyClass                                                  | kg_microbe_metpo |     27 |
-| temperature range 15-40 °C | METPO:1001003 | biolink:OntologyClass                                                  | kg_microbe_metpo |     27 |
-| temperature range 20-40 °C | METPO:1001003 | biolink:OntologyClass                                                  | kg_microbe_metpo |     25 |
-| pH optimum 7.0-8.0         | METPO:1001013 | biolink:OntologyClass                                                  | kg_microbe_metpo |     24 |
-| pH optimum 6.0             | METPO:1001013 | biolink:OntologyClass                                                  | kg_microbe_metpo |     24 |
-| pH optimum 7               | METPO:1001013 | biolink:OntologyClass                                                  | kg_microbe_metpo |     23 |
-| methane                    | CHEBI:16183   | biolink:ChemicalEntity|biolink:ChemicalSubstance|biolink:SmallMolecule | name             |     22 |
-| temperature range 4-37 °C  | METPO:1001003 | biolink:OntologyClass                                                  | kg_microbe_metpo |     22 |
-| formate                    | CHEBI:15740   | biolink:ChemicalEntity|biolink:SmallMolecule                           | name             |     21 |
-| galactose                  | CHEBI:28260   | biolink:ChemicalEntity|biolink:SmallMolecule                           | name             |     20 |
-| temperature growth 30 °C   | METPO:1001002 | biolink:OntologyClass                                                  | kg_microbe_metpo |     20 |
-| pH range 5.0-8.0           | METPO:1001015 | biolink:OntologyClass                                                  | kg_microbe_metpo |     19 |
-| pH range 7.0-8.0           | METPO:1001015 | biolink:OntologyClass                                                  | kg_microbe_metpo |     19 |
-| starch                     | CHEBI:28017   | biolink:ChemicalEntity|biolink:Macromolecule                           | name             |     19 |
+| label                      | grounded_id   | kg_category                                                              | match_type       |   rows |
+|:---------------------------|:--------------|:-------------------------------------------------------------------------|:-----------------|-------:|
+| NaCl                       | CHEBI:26710   | biolink:ChemicalEntity\|biolink:ChemicalSubstance\|biolink:SmallMolecule | synonym          |    367 |
+| pH optimum 7.0             | METPO:1001013 | biolink:OntologyClass                                                    | kg_microbe_metpo |    143 |
+| temperature optimum 30 °C  | METPO:1001001 | biolink:OntologyClass                                                    | kg_microbe_metpo |    128 |
+| glucose                    | CHEBI:17234   | biolink:ChemicalEntity\|biolink:SmallMolecule                            | name             |     77 |
+| temperature optimum 37 °C  | METPO:1001001 | biolink:OntologyClass                                                    | kg_microbe_metpo |     74 |
+| temperature optimum 28 °C  | METPO:1001001 | biolink:OntologyClass                                                    | kg_microbe_metpo |     73 |
+| temperature optimum 25 °C  | METPO:1001001 | biolink:OntologyClass                                                    | kg_microbe_metpo |     51 |
+| pH range 6.0-9.0           | METPO:1001015 | biolink:OntologyClass                                                    | kg_microbe_metpo |     50 |
+| pH optimum 8.0             | METPO:1001013 | biolink:OntologyClass                                                    | kg_microbe_metpo |     36 |
+| temperature range 15-37 °C | METPO:1001003 | biolink:OntologyClass                                                    | kg_microbe_metpo |     36 |
+| acetate                    | CHEBI:30089   | biolink:ChemicalEntity\|biolink:SmallMolecule                            | name             |     34 |
+| temperature range 10-40 °C | METPO:1001003 | biolink:OntologyClass                                                    | kg_microbe_metpo |     32 |
+| nitrate                    | CHEBI:17632   | biolink:ChemicalEntity\|biolink:ChemicalSubstance\|biolink:SmallMolecule | name             |     32 |
+| pH range 6.0-10.0          | METPO:1001015 | biolink:OntologyClass                                                    | kg_microbe_metpo |     32 |
+| methanol                   | CHEBI:17790   | biolink:ChemicalEntity\|biolink:ChemicalSubstance\|biolink:SmallMolecule | name             |     30 |
+| ribose                     | CHEBI:33942   | biolink:ChemicalEntity\|biolink:SmallMolecule                            | name             |     28 |
+| pH range 6.0-8.0           | METPO:1001015 | biolink:OntologyClass                                                    | kg_microbe_metpo |     27 |
+| temperature range 15-40 °C | METPO:1001003 | biolink:OntologyClass                                                    | kg_microbe_metpo |     27 |
+| temperature range 20-40 °C | METPO:1001003 | biolink:OntologyClass                                                    | kg_microbe_metpo |     25 |
+| pH optimum 7.0-8.0         | METPO:1001013 | biolink:OntologyClass                                                    | kg_microbe_metpo |     24 |
+| pH optimum 6.0             | METPO:1001013 | biolink:OntologyClass                                                    | kg_microbe_metpo |     24 |
+| pH optimum 7               | METPO:1001013 | biolink:OntologyClass                                                    | kg_microbe_metpo |     23 |
+| methane                    | CHEBI:16183   | biolink:ChemicalEntity\|biolink:ChemicalSubstance\|biolink:SmallMolecule | name             |     22 |
+| temperature range 4-37 °C  | METPO:1001003 | biolink:OntologyClass                                                    | kg_microbe_metpo |     22 |
+| formate                    | CHEBI:15740   | biolink:ChemicalEntity\|biolink:SmallMolecule                            | name             |     21 |
+| galactose                  | CHEBI:28260   | biolink:ChemicalEntity\|biolink:SmallMolecule                            | name             |     20 |
+| temperature growth 30 °C   | METPO:1001002 | biolink:OntologyClass                                                    | kg_microbe_metpo |     20 |
+| pH range 5.0-8.0           | METPO:1001015 | biolink:OntologyClass                                                    | kg_microbe_metpo |     19 |
+| pH range 7.0-8.0           | METPO:1001015 | biolink:OntologyClass                                                    | kg_microbe_metpo |     19 |
+| starch                     | CHEBI:28017   | biolink:ChemicalEntity\|biolink:Macromolecule                            | name             |     19 |
 
 
 
@@ -452,51 +452,51 @@ _Precision proxies. Each table is a review queue, not a verdict._
 
 **Synonym matches on 1–2-character labels** (7 unique) — element symbols vs one-letter amino-acid codes collide here:
 
-| label   | kg_name         | grounded_id   |
-|:--------|:----------------|:--------------|
-| H2      | dihydrogen      | CHEBI:18276   |
-| N2      | dinitrogen      | CHEBI:17997   |
-| CO      | carbon monoxide | CHEBI:17245   |
-| Ca      | calcium atom    | CHEBI:22984   |
-| K       | lysine          | CHEBI:25094   |
-| Si      | silicon atom    | CHEBI:27573   |
-| O2      | dioxygen        | CHEBI:15379   |
+| label   | kg_name         | grounded_id   |   rows | example_context                                                                                                      |
+|:--------|:----------------|:--------------|-------:|:---------------------------------------------------------------------------------------------------------------------|
+| H2      | dihydrogen      | CHEBI:18276   |     11 | ...d coccoidal and grew separately on [[H2]]/CO2 and formate. [[Ax23T]] grew on NH4 + and by fixin...; ...ed per ... |
+| N2      | dinitrogen      | CHEBI:17997   |      3 | ...x23T]] grew on NH4 + and by fixing [[N2]], but did not grow on NO3 -. The isolate grew at t...                    |
+| O2      | dioxygen        | CHEBI:15379   |      2 | ...nomes of both strains encoded high [[O2]] affinity cbb3-type cytochrome c oxidase genes but...                    |
+| CO      | carbon monoxide | CHEBI:17245   |      1 | ..., was isolated from the top of the [[co]]vering soil of an active charcoal-burning pile. Th...; ...rom the top... |
+| Ca      | calcium atom    | CHEBI:22984   |      1 | ... of sorghum. The taxonomic classifi[[ca]]tion of this novel isolate was investigated by usi...; ...logenetic a... |
+| K       | lysine          | CHEBI:25094   |      1 | ...rowth-promoting activities such as [[K]], Ca and Si solubilization, and the production of ...; ...lubilization... |
+| Si      | silicon atom    | CHEBI:27573   |      1 | ...e-solubilizing bacterial strain, de[[si]]gnated [[C3T]], was isolated from the rhizosphere of s...; ...rom the... |
 
 
 **No word overlap between label and kg_name** (87 unique; top 30) — formulas and true synonyms are fine, look for meaning changes:
 
-| label                      | kg_name                        | grounded_id   | match_type   |   rows |
-|:---------------------------|:-------------------------------|:--------------|:-------------|-------:|
-| thiosulphate               | thiosulfate                    | CHEBI:16094   | synonym      |     18 |
-| NaCl                       | 1% sodium chloride             | CHEBI:26710   | synonym      |     16 |
-| nitrogen                   | dinitrogen                     | CHEBI:17997   | synonym      |     12 |
-| oxygen                     | dioxygen                       | CHEBI:15379   | synonym      |     11 |
-| sulphate                   | sulfate                        | CHEBI:16189   | synonym      |     10 |
-| aesculin                   | esculin                        | CHEBI:4853    | synonym      |      9 |
-| sulphite                   | sulfite                        | CHEBI:17359   | synonym      |      8 |
-| d-glucose                  | D-fructose                     | CHEBI:17634   | synonym      |      7 |
-| siderophores               | siderophore                    | CHEBI:26672   | synonym      |      6 |
-| 1,2-propanediol            | 1,2-propandiol                 | CHEBI:16997   | synonym      |      5 |
-| Fe(III)                    | ferric iron                    | CHEBI:29034   | synonym      |      5 |
-| ribitol                    | D-Adonitol                     | CHEBI:15963   | synonym      |      4 |
-| sulphide                   | sulfide                        | CHEBI:15138   | synonym      |      4 |
-| orthovanadate              | vanadate                       | CHEBI:46442   | synonym      |      3 |
-| metals                     | metal atom                     | CHEBI:33521   | synonym      |      3 |
-| molecular oxygen           | dioxygen                       | CHEBI:15379   | synonym      |      3 |
-| molecular hydrogen         | dihydrogen                     | CHEBI:18276   | synonym      |      2 |
-| acetol                     | hydroxyacetone                 | CHEBI:27957   | synonym      |      2 |
-| alkanes                    | alkane                         | CHEBI:18310   | synonym      |      2 |
-| antibiotics                | antimicrobial agent            | CHEBI:33281   | synonym      |      2 |
-| aromatic hydrocarbons      | arene                          | CHEBI:33658   | synonym      |      2 |
-| carbohydrates              | carbohydrate                   | CHEBI:16646   | synonym      |      2 |
-| ubiquinone-10              | coenzyme Q10                   | CHEBI:46245   | synonym      |      2 |
-| dimethylsulfoniopropionate | S,S-dimethyl-beta-propiothetin | CHEBI:16457   | synonym      |      2 |
-| propane-1,2-diol           | 1,2-propandiol                 | CHEBI:16997   | synonym      |      2 |
-| monomethylamine            | methylamine                    | CHEBI:16830   | synonym      |      2 |
-| NH4Cl                      | ammonium chloride              | CHEBI:31206   | synonym      |      2 |
-| MgCl2                      | magnesium dichloride           | CHEBI:6636    | synonym      |      2 |
-| peptides                   | peptide                        | CHEBI:16670   | synonym      |      1 |
-| polysaccharides            | polysaccharide                 | CHEBI:18154   | synonym      |      1 |
+| label                      | kg_name                        | grounded_id   | match_type   |   rows | example_context                                                                                                      |
+|:---------------------------|:-------------------------------|:--------------|:-------------|-------:|:---------------------------------------------------------------------------------------------------------------------|
+| thiosulphate               | thiosulfate                    | CHEBI:16094   | synonym      |     18 | ...ated with carbohydrate metabolism, [[thiosulphate]] oxidation and [NiFe]-hydrogenases. Based on compr...          |
+| NaCl                       | 1% sodium chloride             | CHEBI:26710   | synonym      |     16 | ...grown at 28 ℃, pH 7.0 and 3% (w/v) [[NaCl]] and possessed Q-10 as the respiratory quinone. Th...                  |
+| nitrogen                   | dinitrogen                     | CHEBI:17997   | synonym      |     12 | ...isolates were capable of symbiotic [[nitrogen]] fixation with P. vulgaris. Based on genomic and p...              |
+| oxygen                     | dioxygen                       | CHEBI:15379   | synonym      |     11 | ...uding an I.2.C-type catechol 2,3-di[[oxygen]]ase (C23O) gene. The strain was able to degrade be...                |
+| sulphate                   | sulfate                        | CHEBI:16189   | synonym      |     10 | ...anaerobically by using nitrate and [[sulphate]] as electron acceptors. The 16S rRNA gene sequence...              |
+| aesculin                   | esculin                        | CHEBI:4853    | synonym      |      9 | ...NaCl. Cells were able to hydrolyse [[aesculin]], gelatin, and Tween 20. According to the 16S rRNA...              |
+| sulphite                   | sulfite                        | CHEBI:17359   | synonym      |      8 | ...rate as electron acceptors but not [[sulphite]], thiosulphate or iron(III) provided as ferrihydri...              |
+| d-glucose                  | D-fructose                     | CHEBI:17634   | synonym      |      7 | ...ly, the strains actively fermented [[d-glucose]] and d-fructose. They exhibited tolerance to high ...             |
+| siderophores               | siderophore                    | CHEBI:26672   | synonym      |      6 | ...uction of indole-3-acetic acid and [[siderophores]] and 1-aminocyclopropane-1-carboxylate deaminase a...          |
+| 1,2-propanediol            | 1,2-propandiol                 | CHEBI:16997   | synonym      |      5 | ...etabolic signatures concerning the [[1,2-propanediol]] and hydroxycinnamic acid metabolism. The gene ald...; .... |
+| Fe(III)                    | ferric iron                    | CHEBI:29034   | synonym      |      5 | ...by hydrogen oxidation coupled with [[Fe(III)]] reduction. Phylogenetic analysis based on 16S rRN...               |
+| sulphide                   | sulfide                        | CHEBI:15138   | synonym      |      4 | ...d sulphur compounds (thiosulphate, [[sulphide]], tetrathionate and elemental sulphur) as electron...              |
+| ribitol                    | D-Adonitol                     | CHEBI:15963   | synonym      |      4 | ...l as their inability to assimilate [[ribitol]]. Physiological data for S. eucalypti were not ava...               |
+| metals                     | metal atom                     | CHEBI:33521   | synonym      |      3 | ...transport systems for amino acids, [[metals]] and phosphate, as well as the ability to synthesi...                |
+| molecular oxygen           | dioxygen                       | CHEBI:15379   | synonym      |      3 | ...e, sulphate, elemental sulphur and [[molecular oxygen]] were capable of serving as the sole electron acce...      |
+| orthovanadate              | vanadate                       | CHEBI:46442   | synonym      |      3 | ...tellurite, tellurate, selenite and [[orthovanadate]] as terminal electron acceptors. While facultative...; ...... |
+| ubiquinone-10              | coenzyme Q10                   | CHEBI:46245   | synonym      |      2 | ...spectively. Both strains contained [[ubiquinone-10]] as the sole respiratory quinone. The major fatty ...         |
+| monomethylamine            | methylamine                    | CHEBI:16830   | synonym      |      2 | ...regates. They reduced methanol and [[monomethylamine]] into methane, using H2 as an electron donor. Dime...       |
+| carbohydrates              | carbohydrate                   | CHEBI:16646   | synonym      |      2 | ...%). [[AMB_02T]] grew with formate, [[carbohydrates]] and aa, including asparagine, histidine, tryptone...         |
+| NH4Cl                      | ammonium chloride              | CHEBI:31206   | synonym      |      2 | ... the species tolerated up to 0.8 M [[NH4Cl]] and 0.5 M NaCl. The major cellular fatty acids we...                 |
+| aromatic hydrocarbons      | arene                          | CHEBI:33658   | synonym      |      2 | ...ce of genes for the degradation of [[aromatic hydrocarbons]] suggests a potential role in the bioremediation o... |
+| alkanes                    | alkane                         | CHEBI:18310   | synonym      |      2 | ...erial strains which can metabolize [[alkanes]] and polycyclic aromatic hydrocarbons were isolate...; ...rew op... |
+| dimethylsulfoniopropionate | S,S-dimethyl-beta-propiothetin | CHEBI:16457   | synonym      |      2 | ...tes but contained genes related to [[dimethylsulfoniopropionate]] catabolism. The results of the polyphasic ta... |
+| molecular hydrogen         | dihydrogen                     | CHEBI:18276   | synonym      |      2 | ...naerobic chemolithoautotroph using [[molecular hydrogen]] and elemental sulphur as the sole electron donor....    |
+| antibiotics                | antimicrobial agent            | CHEBI:33281   | synonym      |      2 | ...l specialized metabolites, notably [[antibiotics]] and compounds that promote plant growth, as well ...           |
+| MgCl2                      | magnesium dichloride           | CHEBI:6636    | synonym      |      2 | ...erved at 40 °C, 3.4 M NaCl, 0.03 M [[MgCl2]] and pH 7.5, while that of strain [[GSL13T]] was at 37...; ... of ... |
+| acetol                     | hydroxyacetone                 | CHEBI:27957   | synonym      |      2 | ...h as ethanol, 2-propanol, acetone, [[acetol]] and propane-1,2-diol were used as alternative ele...                |
+| propane-1,2-diol           | 1,2-propandiol                 | CHEBI:16997   | synonym      |      2 | ...l, 2-propanol, acetone, acetol and [[propane-1,2-diol]] were used as alternative electron donors and carb...      |
+| NH4+                       | ammonium                       | CHEBI:28938   | synonym      |      1 | ... separately on H2/CO2 and formate. [[Ax23T]] grew on [[NH4 +]] and by fixing N2, but did not grow on NO3 -. Th... |
+| nitrogenous compounds      | nitrogen molecular entity      | CHEBI:51143   | synonym      |      1 | ...erol, sucrose, maltose and various [[nitrogenous compounds]]. It fermented glucose into acetate, butyrate, lac... |
 
 
 **Stereo/configuration prefix differs between label and kg_name** (0 unique) — D/L, R/S (incl. `(2R,3S)`), (+)/(−), cis/trans/E/Z, α/β (anomeric *or* positional) flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate):
@@ -506,16 +506,16 @@ _(none)_
 
 **Stereo prefix on one side only** (8 unique). Generic→specific (`maltose`→D-maltose) is usually acceptable; specific→generic (`d-lactose`→lactose) means the grounding dropped a descriptor the extractor captured — check:
 
-| label                | kg_name                           | grounded_id   | match_type   | direction                                        |   rows |
-|:---------------------|:----------------------------------|:--------------|:-------------|:-------------------------------------------------|-------:|
-| maltose              | D-maltose                         | CHEBI:17306   | synonym      | label generic → kg specific                      |     18 |
-| amino acids          | alpha-amino acid                  | CHEBI:33704   | synonym      | label generic → kg specific                      |      8 |
-| alanine              | dl-alanine                        | CHEBI:16449   | synonym      | label generic → kg specific                      |      4 |
-| fructose-6-phosphate | beta-D-fructofuranose 6-phosphate | CHEBI:16084   | synonym      | label generic → kg specific                      |      3 |
-| adonitol             | D-Adonitol                        | CHEBI:15963   | synonym      | label generic → kg specific                      |      1 |
-| d-lactose            | lactose                           | CHEBI:17716   | synonym      | label specific → kg generic (descriptor dropped) |      2 |
-| glycyl-l-proline     | glycine-proline                   | CHEBI:70744   | synonym      | label specific → kg generic (descriptor dropped) |      2 |
-| d-melibiose          | melibiose                         | CHEBI:28053   | synonym      | label specific → kg generic (descriptor dropped) |      1 |
+| label                | kg_name                           | grounded_id   | match_type   | direction                                        |   rows | example_context                                                                                                      |
+|:---------------------|:----------------------------------|:--------------|:-------------|:-------------------------------------------------|-------:|:---------------------------------------------------------------------------------------------------------------------|
+| maltose              | D-maltose                         | CHEBI:17306   | synonym      | label generic → kg specific                      |     18 | ...se, cellobiose, glycerol, sucrose, [[maltose]] and various nitrogenous compounds. It fermented g...               |
+| amino acids          | alpha-amino acid                  | CHEBI:33704   | synonym      | label generic → kg specific                      |      8 | ...a broad spectrum of carbohydrates, [[amino acids]] and organic acids, including glucose, cellobiose,...           |
+| alanine              | dl-alanine                        | CHEBI:16449   | synonym      | label generic → kg specific                      |      4 | ...cose, rhamnose, arabinose, ribose, [[alanine]], glycine and glycerol. The major fermentation pro...               |
+| fructose-6-phosphate | beta-D-fructofuranose 6-phosphate | CHEBI:16084   | synonym      | label generic → kg specific                      |      3 | ...bility among Rothia species to use [[fructose-6-phosphate]] as a sole carbon source. [[RSM42T]] also exhibits ... |
+| adonitol             | D-Adonitol                        | CHEBI:15963   | synonym      | label generic → kg specific                      |      1 | ...arbon sources including acetamide, [[adonitol]], amygdalin, l-arabinose, citric acid, glucose, ma...              |
+| d-lactose            | lactose                           | CHEBI:17716   | synonym      | label specific → kg generic (descriptor dropped) |      2 | ...atalase or ferment d-trehalose and [[d-lactose]]. Taxon II, represented by 11 isolates, showed the...; ...its ... |
+| glycyl-l-proline     | glycine-proline                   | CHEBI:70744   | synonym      | label specific → kg generic (descriptor dropped) |      2 | ...droxy-phenylacetic acid, Tween 40, [[glycyl-l-proline]], d-maltose, d-galactonic acid lactone, α-hydroxy ...      |
+| d-melibiose          | melibiose                         | CHEBI:28053   | synonym      | label specific → kg generic (descriptor dropped) |      1 | ...amnose, d-galactose, d-lactose and [[d-melibiose]]. The names Listeria tempestatis sp. nov. and List...           |
 
 
 **kind / kg_category mismatch** (0 unique):
@@ -526,19 +526,31 @@ _(none)_
 - Chemical rows whose *label* carries a value/concentration (e.g. `12.5% NaCl`): **398** — value belongs in `chemical_level_type`/`context`, not the term label
 
 
-### 5b. Noise: labels that are not real, specific terms
-
-| noise type                            |   rows |   of which grounded | examples                                                                                                                                                                                                           |
-|:--------------------------------------|-------:|--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| generic class phrase                  |     43 |                  14 | `carbon sources`, `aromatic compounds`, `metals`, `fish gut fluid`, `sugars`, `aromatic hydrocarbons`                                                                                                              |
-| trait / assay phrase in chemical slot |     51 |                  15 | `catalase`, `oxidase`, `H2/CO2`, `urease`, `indole`, `β-glucuronidase`                                                                                                                                             |
-| growth medium in chemical slot        |    147 |                  46 | `yeast extract`, `casein`, `tryptone`, `R2A agar`, `tryptic soy agar`, `nutrient agar`                                                                                                                             |
-| value/unit only                       |      0 |                   0 |                                                                                                                                                                                                                    |
-| placeholder                           |     13 |                   0 | `<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`                                                                                                         |
-| ≥6 words (chemical/taxon slots)       |     33 |                  26 | `brain heart infusion agar supplemented w`, `0.5 % (w/v; optimum, 0 %) NaCl`, `up to 3.5 % (w/v) NaCl`, `up to 12 % (w/v) NaCl`, `optimum 0% sodium chloride (NaCl, w/v)`, `multi locus sequence type 598 strains` |
+### 5b. Label triage: noise vs real terms outside the chemical slot
 
 
-- Rows matching ≥1 noise pattern: **282 / 14,982 (1.9%)**
+**Noise: labels that are not real terms** (drop or fix upstream):
+
+| noise type                                              |   rows |   of which grounded | examples                                                                                                                                                                                                           |
+|:--------------------------------------------------------|-------:|--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| value/unit only                                         |      0 |                   0 |                                                                                                                                                                                                                    |
+| placeholder                                             |     13 |                   0 | `<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`                                                                                                         |
+| ≥6 words (verbose label; often value/context leaked in) |     33 |                  26 | `brain heart infusion agar supplemented w`, `0.5 % (w/v; optimum, 0 %) NaCl`, `up to 3.5 % (w/v) NaCl`, `up to 12 % (w/v) NaCl`, `optimum 0% sodium chloride (NaCl, w/v)`, `multi locus sequence type 598 strains` |
+
+
+- Rows matching ≥1 noise pattern: **46 / 14,982 (0.3%)**
+
+
+**Real terms in the chemical slot with a different modeling target** — not noise; route, don't drop:
+
+| modeling target                                              |   rows |   of which grounded | examples                                                                                              |
+|:-------------------------------------------------------------|-------:|--------------------:|:------------------------------------------------------------------------------------------------------|
+| abstract class (model as a class of chemicals)               |     43 |                  14 | `carbon sources`, `aromatic compounds`, `metals`, `fish gut fluid`, `sugars`, `aromatic hydrocarbons` |
+| enzyme activity / assay (function or assay → METPO, see §5d) |     51 |                  15 | `catalase`, `oxidase`, `H2/CO2`, `urease`, `indole`, `β-glucuronidase`                                |
+| growth medium / complex component (→ MediaDive)              |    147 |                  46 | `yeast extract`, `casein`, `tryptone`, `R2A agar`, `tryptic soy agar`, `nutrient agar`                |
+
+
+- Rows in a retarget bucket: **240 / 14,982 (1.6%)** — 4 of these also match a noise pattern (verbose media labels)
 
 
 ### 5c. Incomplete or truncated extraction (recall proxies)
@@ -635,7 +647,7 @@ _The table has no source text, so these are proxies from `context` snippets; con
 _(none)_
 
 
-**Ungrounded trait-like labels** (13 unique; top 30) — phenotypes/enzymes extracted as chemicals; candidates for METPO classes or for schema guidance:
+**Ungrounded enzyme-activity / assay labels** (13 unique; top 30) — these are functions or assays (catalase, urease, β-glucuronidase, H2/CO2), real results reported in the chemical slot; candidates for METPO function/assay classes:
 
 | label                                           |   rows |   n_docs |
 |:------------------------------------------------|-------:|---------:|
