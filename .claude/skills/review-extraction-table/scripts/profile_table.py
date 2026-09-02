@@ -69,11 +69,15 @@ FIELD_CUES = {  # field -> regex over concatenated context that suggests the slo
 
 
 def fsn_module_path() -> Path | None:
-    """Locate src/process_terms/full_scientific_name.py in the repo this skill lives in."""
+    """Locate src/process_terms/full_scientific_name.py in the repo this skill lives in.
+    The walk stops at the first repo root (.git or pyproject.toml) so an unrelated file
+    higher up the filesystem can never be imported."""
     for root in Path(__file__).resolve().parents:
         cand = root / "src" / "process_terms" / "full_scientific_name.py"
         if cand.exists():
             return cand
+        if (root / ".git").exists() or (root / "pyproject.toml").exists():
+            return None
     return None
 
 
@@ -753,6 +757,7 @@ def main() -> int:
     elif not all(R[k] for k in ("doc", "field", "label", "context")):
         P("\n_Requires doc/field/label/context roles; skipped._\n")
     else:
+        P(f"\n_Names computed by `{rel(fsn_p)}` ({git_info(fsn_p)}); the module search stops at the repo root._\n")
         named = fsn.add_full_names(df.rename(columns={R["doc"]: "doc", R["field"]: "field", R["label"]: "label", R["context"]: "context"}))
         stn = named[named["field"] == "strains"]
         n = len(stn)
