@@ -169,7 +169,25 @@ def md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
         df = df.head(max_rows)
     if df.empty:
         return "_(none)_\n"
+    # escape literal pipes (e.g. multi-valued kg_category "a|b|c") so cells don't
+    # split into extra markdown columns and shift numeric columns sideways
+    df = df.copy()
+    for c in df.columns:
+        if df[c].dtype == object:
+            df[c] = df[c].map(lambda x: x.replace("|", "\\|") if isinstance(x, str) else x)
     return df.to_markdown(index=False) + "\n"
+
+
+def ctx_example(label: str, ctx: str) -> str:
+    """`ctx` trimmed to ~110 chars centred on this label's own [[mention]] (a context
+    can hold several bracketed mentions; fall back to the first one)."""
+    if not ctx:
+        return ""
+    m = re.search(r"\[\[" + re.escape(label), ctx, re.IGNORECASE)
+    i = m.start() if m else ctx.find("[[")
+    start = max(0, i - 35) if i >= 0 else 0
+    end = start + 110
+    return ("..." if start else "") + ctx[start:end] + ("..." if end < len(ctx) else "")
 
 
 def main() -> int:
@@ -445,8 +463,18 @@ def main() -> int:
     P("\n### 5a. False-positive candidates (grounded, but suspicious)\n")
     P("\n_Precision proxies. Each table is a review queue, not a verdict._\n")
     if R["grounded_id"] and R["match_type"] and R["kg_name"] and R["label"]:
+
+        def fp_table(sub: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+            """Group `sub` by `cols` with a row count and one example context snippet."""
+            aggs = {"rows": (cols[0], "size")}
+            if R["context"]:
+                sub = sub.copy()
+                sub["example_context"] = [ctx_example(l, c) for l, c in zip(sub[R["label"]], sub[R["context"]])]
+                aggs["example_context"] = ("example_context", lambda s: next((x for x in s if x), ""))
+            return sub.groupby(cols, sort=False).agg(**aggs).reset_index().sort_values("rows", ascending=False)
+
         syn = df[grounded & (df[R["match_type"]] == "synonym")]
-        short = syn[syn[R["label"]].str.len() <= 2][[R["label"], R["kg_name"], R["grounded_id"]]].drop_duplicates()
+        short = fp_table(syn[syn[R["label"]].str.len() <= 2], [R["label"], R["kg_name"], R["grounded_id"]])
         P(f"\n**Synonym matches on 1–2-character labels** ({len(short)} unique) — element symbols vs one-letter amino-acid codes collide here:\n")
         P(md_table(short))
         if len(short):
@@ -454,7 +482,7 @@ def main() -> int:
         # zero token overlap between label and kg_name (lexical), excluding tiny formula labels
         lex = df[grounded & df[R["match_type"]].isin(["name", "synonym"]) & (df[R["label"]].str.len() > 3)]
         ov = [len(tokens(l) & tokens(k)) == 0 for l, k in zip(lex[R["label"]], lex[R["kg_name"]])]
-        nov = lex[ov][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
+        nov = fp_table(lex[ov], [R["label"], R["kg_name"], R["grounded_id"], R["match_type"]])
         P(f"\n**No word overlap between label and kg_name** ({len(nov)} unique; top {args.top}) — formulas and true synonyms are fine, look for meaning changes:\n")
         P(md_table(nov, args.top))
         # stereo / configuration prefix differs while the stem is shared (d-glucose -> L-glucose, l-arabinose -> D-arabinose)
@@ -462,17 +490,18 @@ def main() -> int:
         st = []
         for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]]):
             st.append(bool(tokens(l) & tokens(k)) and stereo_conflict(l, k))
-        stdf = lex2[st][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].value_counts().reset_index(name="rows")
+        stdf = fp_table(lex2[st], [R["label"], R["kg_name"], R["grounded_id"], R["match_type"]])
         P(f"\n**Stereo/configuration prefix differs between label and kg_name** ({len(stdf)} unique) — D/L, R/S (incl. `(2R,3S)`), (+)/(−), cis/trans/E/Z, α/β (anomeric *or* positional) flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate):\n")
         P(md_table(stdf, args.top))
         if len(stdf):
             flags.append(f"{len(stdf)} label/kg_name pairs differ in stereo prefix (D/L, R/S, α/β…) — likely wrong enantiomer/isomer")
         one = [bool(tokens(l) & tokens(k)) and bool(stereo_prefixes(l)) != bool(stereo_prefixes(k))
                for l, k in zip(lex2[R["label"]], lex2[R["kg_name"]])]
-        onedf = lex2[one][[R["label"], R["kg_name"], R["grounded_id"], R["match_type"]]].copy()
+        onedf = lex2[one].copy()
         onedf["direction"] = ["label generic → kg specific" if not stereo_prefixes(l) else "label specific → kg generic (descriptor dropped)"
                               for l in onedf[R["label"]]]
-        onedf = onedf.value_counts().reset_index(name="rows").sort_values(["direction", "rows"], ascending=[True, False])
+        onedf = fp_table(onedf, [R["label"], R["kg_name"], R["grounded_id"], R["match_type"], "direction"])
+        onedf = onedf.sort_values(["direction", "rows"], ascending=[True, False])
         P(f"\n**Stereo prefix on one side only** ({len(onedf)} unique). Generic→specific (`maltose`→D-maltose) is usually acceptable; specific→generic (`d-lactose`→lactose) means the grounding dropped a descriptor the extractor captured — check:\n")
         P(md_table(onedf, args.top))
     if R["kg_category"] and kind_col and R["grounded_id"]:
@@ -491,24 +520,35 @@ def main() -> int:
         val = df[grounded & chem_mask & lab.str.match(VALUE_RE) & lab.str.contains(r"\d")]
         P(f"\n- Chemical rows whose *label* carries a value/concentration (e.g. `12.5% NaCl`): **{len(val):,}** — value belongs in `chemical_level_type`/`context`, not the term label\n")
 
-    # --- 6b noise ---
-    P("\n### 5b. Noise: labels that are not real, specific terms\n")
+    # --- 6b label triage: true noise vs real terms with a different modeling target ---
+    P("\n### 5b. Label triage: noise vs real terms outside the chemical slot\n")
+
+    def bucket_table(buckets: dict, key: str) -> pd.Series:
+        rows = []
+        for name, m in buckets.items():
+            m = m.fillna(False)
+            ex = ", ".join(lab[m].value_counts().head(6).index.map(lambda x: f"`{x[:40]}`"))
+            rows.append({key: name, "rows": int(m.sum()), "of which grounded": int((m & grounded).sum()), "examples": ex})
+        P(md_table(pd.DataFrame(rows)))
+        return pd.concat([m.fillna(False) for m in buckets.values()], axis=1).any(axis=1)
+
+    P("\n**Noise: labels that are not real terms** (drop or fix upstream):\n")
     noise = {
-        "generic class phrase": has(lab, GENERIC_RE) & chem_mask,
-        "trait / assay phrase in chemical slot": has(lab, TRAIT_RE) & chem_mask & ~has(lab, MEDIUM_RE),
-        "growth medium in chemical slot": has(lab, MEDIUM_RE) & chem_mask,
         "value/unit only": lab.str.fullmatch(r"[\d\.\-–,\s%]+(?:\s*(?:%|mM|M|g/l|g/L|w/v|°C|℃))?") & chem_mask,
         "placeholder": lab.apply(lambda x: bool(UNSPEC_RE.search(x))),
-        "≥6 words (chemical/taxon slots)": (lab.str.split().str.len() >= 6) & (df[kind_col] != "phenotype_observation" if kind_col else True),
+        "≥6 words (value/context leaked into the label)": (lab.str.split().str.len() >= 6) & (df[kind_col] != "phenotype_observation" if kind_col else True),
     }
-    nrows = []
-    for name, m in noise.items():
-        m = m.fillna(False)
-        ex = ", ".join(lab[m].value_counts().head(6).index.map(lambda x: f"`{x[:40]}`"))
-        nrows.append({"noise type": name, "rows": int(m.sum()), "of which grounded": int((m & grounded).sum()), "examples": ex})
-    P(md_table(pd.DataFrame(nrows)))
-    any_noise = pd.concat([m.fillna(False) for m in noise.values()], axis=1).any(axis=1)
+    any_noise = bucket_table(noise, "noise type")
     P(f"\n- Rows matching ≥1 noise pattern: **{any_noise.sum():,} / {len(df):,} ({any_noise.mean()*100:.1f}%)**\n")
+
+    P("\n**Real terms in the chemical slot with a different modeling target** — not noise; route, don't drop:\n")
+    retarget = {
+        "abstract class (model as a class of chemicals)": has(lab, GENERIC_RE) & chem_mask,
+        "enzyme activity / assay (function or assay → METPO, see §5d)": has(lab, TRAIT_RE) & chem_mask & ~has(lab, MEDIUM_RE),
+        "growth medium / complex component (→ MediaDive)": has(lab, MEDIUM_RE) & chem_mask,
+    }
+    any_rt = bucket_table(retarget, "modeling target")
+    P(f"\n- Rows in a retarget bucket: **{any_rt.sum():,} / {len(df):,} ({any_rt.mean()*100:.1f}%)**\n")
 
     # --- 6c recall / truncation proxies ---
     P("\n### 5c. Incomplete or truncated extraction (recall proxies)\n")
@@ -607,7 +647,7 @@ def main() -> int:
     if R["grounded_id"] and R["label"]:
         cand = df[~grounded & chem_mask & has(lab, TRAIT_RE) & ~has(lab, MEDIUM_RE)]
         cand = cand.groupby(R["label"]).agg(rows=(R["label"], "size"), n_docs=(R["doc"], "nunique") if R["doc"] else (R["label"], "size")).sort_values("rows", ascending=False).reset_index()
-        P(f"\n**Ungrounded trait-like labels** ({len(cand)} unique; top {args.top}) — phenotypes/enzymes extracted as chemicals; candidates for METPO classes or for schema guidance:\n")
+        P(f"\n**Ungrounded enzyme-activity / assay labels** ({len(cand)} unique; top {args.top}) — these are functions or assays (catalase, urease, β-glucuronidase, H2/CO2), real results reported in the chemical slot; candidates for METPO function/assay classes:\n")
         P(md_table(cand, args.top))
         # chemicals ungrounded but frequent
         freq = df[~grounded & chem_mask & ~has(lab, TRAIT_RE) & ~has(lab, MEDIUM_RE) & ~has(lab, GENERIC_RE)]

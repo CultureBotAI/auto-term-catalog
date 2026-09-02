@@ -71,11 +71,15 @@ Key facts about the format:
      - **5a false positives**: read every 1–2-char synonym match (element
        symbol vs amino-acid code, e.g. `K`→lysine) and every "no word
        overlap" row (sugars are the classic miss, e.g. `d-glucose`→D-fructose);
-       kind/kg_category mismatches should be zero.
-     - **5b noise**: generic class phrases, trait/assay phrases and media in
-       the chemical slot, placeholders, ≥6-word labels. Decide per bucket
-       whether it is a prompt problem (schema says "chemical", agent emits
-       "carbon sources") or a legitimate term for a different slot.
+       each table carries an `example_context` snippet so you can judge the
+       mention in place; kind/kg_category mismatches should be zero.
+     - **5b label triage**: true noise (placeholders, value/unit-only labels,
+       ≥6-word labels with values leaked in) is separated from *real* terms
+       that just need a different modeling target: abstract class phrases
+       (`carbon sources` — we do model abstract classes), enzyme
+       activity/assay phrases (functions or assays → METPO, §5d), and growth
+       media (→ MediaDive). Only the first group is noise to drop/fix; the
+       second group is routing work, not extraction error.
      - **5c recall/truncation**: docs with ≤N rows; docs where a field cue
        (°C, pH, NaCl…) appears in *other rows'* context but the field has no
        row; span offset errors (`[[ (optimum pH 7.0]]`); spans that are a
@@ -85,9 +89,11 @@ Key facts about the format:
        rows with no `original_spans`. Only the source abstracts can confirm
        true recall.
      - **5d METPO/vocabulary gaps**: relationship types without a METPO id;
-       ungrounded trait-like labels (enzymes, `H2/CO2`) that are phenotypes
-       not chemicals; frequent ungrounded specific chemicals (CHEBI synonym
-       gaps such as `meso-diaminopimelic acid`, `dl-lactate`).
+       ungrounded enzyme-activity/assay labels (`oxidase`, `urease`,
+       `H2/CO2`) — these are functions or assays, not chemicals, and are
+       candidates for METPO function/assay classes; frequent ungrounded
+       specific chemicals (CHEBI synonym gaps such as
+       `meso-diaminopimelic acid`, `dl-lactate`).
      - **5e process/prompt gaps**: placeholder spelling variants (prompt should
        say *omit*), labels typed as more than one `kind`, no provenance
        columns (model/prompt/schema version), case-only label variants.
@@ -110,5 +116,6 @@ Key facts about the format:
 - New column names: add them to `ROLE_CANDIDATES` in `scripts/profile_table.py`.
 - New QC rule: append to `flags` in the QC section and, if useful, a table.
 - New ungrounded bucket: add a regex + branch in `bucket_ungrounded()`.
-- New noise type: add an entry to the `noise` dict in §5b; new field cue for
+- New §5b bucket: add an entry to the `noise` dict (not a real term) or the
+  `retarget` dict (real term, different modeling target); new field cue for
   the recall proxy: `FIELD_CUES`; new trait pattern: `TRAIT_RE`.
