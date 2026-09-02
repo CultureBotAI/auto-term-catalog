@@ -465,38 +465,38 @@ _Precision proxies. Each table is a review queue, not a verdict._
 
 **No word overlap between label and kg_name** (87 unique; top 30) — formulas and true synonyms are fine, look for meaning changes:
 
-| label                      | kg_name                        | grounded_id       | match_type   |   rows | example_context                                                                                                      |
-|:---------------------------|:-------------------------------|:------------------|:-------------|-------:|:---------------------------------------------------------------------------------------------------------------------|
-| thiosulphate               | thiosulfate                    | CHEBI:16094       | synonym      |     18 | ...ated with carbohydrate metabolism, [[thiosulphate]] oxidation and [NiFe]-hydrogenases. Based on compr...          |
-| NaCl                       | 1% sodium chloride             | CHEBI:26710       | synonym      |     16 | ...grown at 28 ℃, pH 7.0 and 3% (w/v) [[NaCl]] and possessed Q-10 as the respiratory quinone. Th...                  |
-| nitrogen                   | dinitrogen                     | CHEBI:17997       | synonym      |     12 | ...isolates were capable of symbiotic [[nitrogen]] fixation with P. vulgaris. Based on genomic and p...              |
-| oxygen                     | dioxygen                       | CHEBI:15379       | synonym      |     11 | ...uding an I.2.C-type catechol 2,3-di[[oxygen]]ase (C23O) gene. The strain was able to degrade be...                |
-| sulphate                   | sulfate                        | CHEBI:16189       | synonym      |     10 | ...anaerobically by using nitrate and [[sulphate]] as electron acceptors. The 16S rRNA gene sequence...              |
-| aesculin                   | esculin                        | CHEBI:4853        | synonym      |      9 | ...NaCl. Cells were able to hydrolyse [[aesculin]], gelatin, and Tween 20. According to the 16S rRNA...              |
-| sulphite                   | sulfite                        | CHEBI:17359       | synonym      |      8 | ...rate as electron acceptors but not [[sulphite]], thiosulphate or iron(III) provided as ferrihydri...              |
-| d-glucose                  | D-fructose                     | CHEBI:17634       | synonym      |      7 | ...ly, the strains actively fermented [[d-glucose]] and d-fructose. They exhibited tolerance to high ...             |
-| siderophores               | siderophore                    | CHEBI:26672       | synonym      |      6 | ...uction of indole-3-acetic acid and [[siderophores]] and 1-aminocyclopropane-1-carboxylate deaminase a...          |
-| 1,2-propanediol            | 1,2-propandiol                 | CHEBI:16997       | synonym      |      5 | ...etabolic signatures concerning the [[1,2-propanediol]] and hydroxycinnamic acid metabolism. The gene ald...; .... |
-| Fe(III)                    | ferric iron                    | CHEBI:29034       | synonym      |      5 | ...by hydrogen oxidation coupled with [[Fe(III)]] reduction. Phylogenetic analysis based on 16S rRN...               |
-| ribitol                    | D-Adonitol                     | CHEBI:15963       | synonym      |      4 | ...l as their inability to assimilate [[ribitol]]. Physiological data for S. eucalypti were not ava...               |
-| sulphide                   | sulfide                        | CHEBI:15138       | synonym      |      4 | ...d sulphur compounds (thiosulphate, [[sulphide]], tetrathionate and elemental sulphur) as electron...              |
-| orthovanadate              | vanadate                       | CHEBI:46442       | synonym      |      3 | ...tellurite, tellurate, selenite and [[orthovanadate]] as terminal electron acceptors. While facultative...; ...... |
-| metals                     | metal atom                     | CHEBI:33521       | synonym      |      3 | ...transport systems for amino acids, [[metals]] and phosphate, as well as the ability to synthesi...                |
-| molecular oxygen           | dioxygen                       | CHEBI:15379       | synonym      |      3 | ...e, sulphate, elemental sulphur and [[molecular oxygen]] were capable of serving as the sole electron acce...      |
-| alkanes                    | alkane                         | CHEBI:18310       | synonym      |      2 | ...erial strains which can metabolize [[alkanes]] and polycyclic aromatic hydrocarbons were isolate...; ...rew op... |
-| MgCl2                      | magnesium dichloride           | CHEBI:6636        | synonym      |      2 | ...erved at 40 °C, 3.4 M NaCl, 0.03 M [[MgCl2]] and pH 7.5, while that of strain [[GSL13T]] was at 37...; ... of ... |
-| propane-1,2-diol           | 1,2-propandiol                 | CHEBI:16997       | synonym      |      2 | ...l, 2-propanol, acetone, acetol and [[propane-1,2-diol]] were used as alternative electron donors and carb...      |
-| aromatic hydrocarbons      | arene                          | CHEBI:33658       | synonym      |      2 | ...ce of genes for the degradation of [[aromatic hydrocarbons]] suggests a potential role in the bioremediation o... |
-| dimethylsulfoniopropionate | S,S-dimethyl-beta-propiothetin | CHEBI:16457       | synonym      |      2 | ...tes but contained genes related to [[dimethylsulfoniopropionate]] catabolism. The results of the polyphasic ta... |
-| molecular hydrogen         | dihydrogen                     | CHEBI:18276       | synonym      |      2 | ...naerobic chemolithoautotroph using [[molecular hydrogen]] and elemental sulphur as the sole electron donor....    |
-| antibiotics                | antimicrobial agent            | CHEBI:33281       | synonym      |      2 | ...l specialized metabolites, notably [[antibiotics]] and compounds that promote plant growth, as well ...           |
-| acetol                     | hydroxyacetone                 | CHEBI:27957       | synonym      |      2 | ...h as ethanol, 2-propanol, acetone, [[acetol]] and propane-1,2-diol were used as alternative ele...                |
-| monomethylamine            | methylamine                    | CHEBI:16830       | synonym      |      2 | ...regates. They reduced methanol and [[monomethylamine]] into methane, using H2 as an electron donor. Dime...       |
-| ubiquinone-10              | coenzyme Q10                   | CHEBI:46245       | synonym      |      2 | ...spectively. Both strains contained [[ubiquinone-10]] as the sole respiratory quinone. The major fatty ...         |
-| NH4Cl                      | ammonium chloride              | CHEBI:31206       | synonym      |      2 | ... the species tolerated up to 0.8 M [[NH4Cl]] and 0.5 M NaCl. The major cellular fatty acids we...                 |
-| carbohydrates              | carbohydrate                   | CHEBI:16646       | synonym      |      2 | ...%). [[AMB_02T]] grew with formate, [[carbohydrates]] and aa, including asparagine, histidine, tryptone...         |
-| polyketides                | polyketide                     | CHEBI:26188       | synonym      |      1 | ...]] has the potential to synthesize [[polyketides]], terpenes and a series of important antibiotics b...           |
-| Chryseobacterium faecale   | Kaistella faecalis             | NCBITaxon:2852098 | synonym      |      1 | ...ound to be most closely related to [[Chryseobacterium faecale]] F4T (98.4 %), Kaistella soli DKR-2T (98.0 %), ... |
+| label                      | kg_name                        | grounded_id   | match_type   |   rows | example_context                                                                                                      |
+|:---------------------------|:-------------------------------|:--------------|:-------------|-------:|:---------------------------------------------------------------------------------------------------------------------|
+| thiosulphate               | thiosulfate                    | CHEBI:16094   | synonym      |     18 | ...ated with carbohydrate metabolism, [[thiosulphate]] oxidation and [NiFe]-hydrogenases. Based on compr...          |
+| NaCl                       | 1% sodium chloride             | CHEBI:26710   | synonym      |     16 | ...grown at 28 ℃, pH 7.0 and 3% (w/v) [[NaCl]] and possessed Q-10 as the respiratory quinone. Th...                  |
+| nitrogen                   | dinitrogen                     | CHEBI:17997   | synonym      |     12 | ...isolates were capable of symbiotic [[nitrogen]] fixation with P. vulgaris. Based on genomic and p...              |
+| oxygen                     | dioxygen                       | CHEBI:15379   | synonym      |     11 | ...uding an I.2.C-type catechol 2,3-di[[oxygen]]ase (C23O) gene. The strain was able to degrade be...                |
+| sulphate                   | sulfate                        | CHEBI:16189   | synonym      |     10 | ...anaerobically by using nitrate and [[sulphate]] as electron acceptors. The 16S rRNA gene sequence...              |
+| aesculin                   | esculin                        | CHEBI:4853    | synonym      |      9 | ...NaCl. Cells were able to hydrolyse [[aesculin]], gelatin, and Tween 20. According to the 16S rRNA...              |
+| sulphite                   | sulfite                        | CHEBI:17359   | synonym      |      8 | ...rate as electron acceptors but not [[sulphite]], thiosulphate or iron(III) provided as ferrihydri...              |
+| d-glucose                  | D-fructose                     | CHEBI:17634   | synonym      |      7 | ...ly, the strains actively fermented [[d-glucose]] and d-fructose. They exhibited tolerance to high ...             |
+| siderophores               | siderophore                    | CHEBI:26672   | synonym      |      6 | ...uction of indole-3-acetic acid and [[siderophores]] and 1-aminocyclopropane-1-carboxylate deaminase a...          |
+| 1,2-propanediol            | 1,2-propandiol                 | CHEBI:16997   | synonym      |      5 | ...etabolic signatures concerning the [[1,2-propanediol]] and hydroxycinnamic acid metabolism. The gene ald...; .... |
+| Fe(III)                    | ferric iron                    | CHEBI:29034   | synonym      |      5 | ...by hydrogen oxidation coupled with [[Fe(III)]] reduction. Phylogenetic analysis based on 16S rRN...               |
+| sulphide                   | sulfide                        | CHEBI:15138   | synonym      |      4 | ...d sulphur compounds (thiosulphate, [[sulphide]], tetrathionate and elemental sulphur) as electron...              |
+| ribitol                    | D-Adonitol                     | CHEBI:15963   | synonym      |      4 | ...l as their inability to assimilate [[ribitol]]. Physiological data for S. eucalypti were not ava...               |
+| metals                     | metal atom                     | CHEBI:33521   | synonym      |      3 | ...transport systems for amino acids, [[metals]] and phosphate, as well as the ability to synthesi...                |
+| molecular oxygen           | dioxygen                       | CHEBI:15379   | synonym      |      3 | ...e, sulphate, elemental sulphur and [[molecular oxygen]] were capable of serving as the sole electron acce...      |
+| orthovanadate              | vanadate                       | CHEBI:46442   | synonym      |      3 | ...tellurite, tellurate, selenite and [[orthovanadate]] as terminal electron acceptors. While facultative...; ...... |
+| ubiquinone-10              | coenzyme Q10                   | CHEBI:46245   | synonym      |      2 | ...spectively. Both strains contained [[ubiquinone-10]] as the sole respiratory quinone. The major fatty ...         |
+| monomethylamine            | methylamine                    | CHEBI:16830   | synonym      |      2 | ...regates. They reduced methanol and [[monomethylamine]] into methane, using H2 as an electron donor. Dime...       |
+| carbohydrates              | carbohydrate                   | CHEBI:16646   | synonym      |      2 | ...%). [[AMB_02T]] grew with formate, [[carbohydrates]] and aa, including asparagine, histidine, tryptone...         |
+| NH4Cl                      | ammonium chloride              | CHEBI:31206   | synonym      |      2 | ... the species tolerated up to 0.8 M [[NH4Cl]] and 0.5 M NaCl. The major cellular fatty acids we...                 |
+| aromatic hydrocarbons      | arene                          | CHEBI:33658   | synonym      |      2 | ...ce of genes for the degradation of [[aromatic hydrocarbons]] suggests a potential role in the bioremediation o... |
+| alkanes                    | alkane                         | CHEBI:18310   | synonym      |      2 | ...erial strains which can metabolize [[alkanes]] and polycyclic aromatic hydrocarbons were isolate...; ...rew op... |
+| dimethylsulfoniopropionate | S,S-dimethyl-beta-propiothetin | CHEBI:16457   | synonym      |      2 | ...tes but contained genes related to [[dimethylsulfoniopropionate]] catabolism. The results of the polyphasic ta... |
+| molecular hydrogen         | dihydrogen                     | CHEBI:18276   | synonym      |      2 | ...naerobic chemolithoautotroph using [[molecular hydrogen]] and elemental sulphur as the sole electron donor....    |
+| antibiotics                | antimicrobial agent            | CHEBI:33281   | synonym      |      2 | ...l specialized metabolites, notably [[antibiotics]] and compounds that promote plant growth, as well ...           |
+| MgCl2                      | magnesium dichloride           | CHEBI:6636    | synonym      |      2 | ...erved at 40 °C, 3.4 M NaCl, 0.03 M [[MgCl2]] and pH 7.5, while that of strain [[GSL13T]] was at 37...; ... of ... |
+| acetol                     | hydroxyacetone                 | CHEBI:27957   | synonym      |      2 | ...h as ethanol, 2-propanol, acetone, [[acetol]] and propane-1,2-diol were used as alternative ele...                |
+| propane-1,2-diol           | 1,2-propandiol                 | CHEBI:16997   | synonym      |      2 | ...l, 2-propanol, acetone, acetol and [[propane-1,2-diol]] were used as alternative electron donors and carb...      |
+| NH4+                       | ammonium                       | CHEBI:28938   | synonym      |      1 | ... separately on H2/CO2 and formate. [[Ax23T]] grew on [[NH4 +]] and by fixing N2, but did not grow on NO3 -. Th... |
+| nitrogenous compounds      | nitrogen molecular entity      | CHEBI:51143   | synonym      |      1 | ...erol, sucrose, maltose and various [[nitrogenous compounds]]. It fermented glucose into acetate, butyrate, lac... |
 
 
 **Stereo/configuration prefix differs between label and kg_name** (0 unique) — D/L, R/S (incl. `(2R,3S)`), (+)/(−), cis/trans/E/Z, α/β (anomeric *or* positional) flips *within one nomenclature system* change the compound (`l-arabinose`→D-arabinose); D↔R/S are different systems and are not compared (D-lactate ≡ (R)-lactate):
@@ -531,11 +531,11 @@ _(none)_
 
 **Noise: labels that are not real terms** (drop or fix upstream):
 
-| noise type                                     |   rows |   of which grounded | examples                                                                                                                                                                                                           |
-|:-----------------------------------------------|-------:|--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| value/unit only                                |      0 |                   0 |                                                                                                                                                                                                                    |
-| placeholder                                    |     13 |                   0 | `<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`                                                                                                         |
-| ≥6 words (value/context leaked into the label) |     33 |                  26 | `brain heart infusion agar supplemented w`, `0.5 % (w/v; optimum, 0 %) NaCl`, `up to 3.5 % (w/v) NaCl`, `up to 12 % (w/v) NaCl`, `optimum 0% sodium chloride (NaCl, w/v)`, `multi locus sequence type 598 strains` |
+| noise type                                              |   rows |   of which grounded | examples                                                                                                                                                                                                           |
+|:--------------------------------------------------------|-------:|--------------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| value/unit only                                         |      0 |                   0 |                                                                                                                                                                                                                    |
+| placeholder                                             |     13 |                   0 | `<unspecified>`, `(unspecified)`, `(not specified)`, `[not specified]`, `[Not specified]`, `[unspecified]`                                                                                                         |
+| ≥6 words (verbose label; often value/context leaked in) |     33 |                  26 | `brain heart infusion agar supplemented w`, `0.5 % (w/v; optimum, 0 %) NaCl`, `up to 3.5 % (w/v) NaCl`, `up to 12 % (w/v) NaCl`, `optimum 0% sodium chloride (NaCl, w/v)`, `multi locus sequence type 598 strains` |
 
 
 - Rows matching ≥1 noise pattern: **46 / 14,982 (0.3%)**
@@ -550,7 +550,7 @@ _(none)_
 | growth medium / complex component (→ MediaDive)              |    147 |                  46 | `yeast extract`, `casein`, `tryptone`, `R2A agar`, `tryptic soy agar`, `nutrient agar`                |
 
 
-- Rows in a retarget bucket: **240 / 14,982 (1.6%)**
+- Rows in a retarget bucket: **240 / 14,982 (1.6%)** — 4 of these also match a noise pattern (verbose media labels)
 
 
 ### 5c. Incomplete or truncated extraction (recall proxies)

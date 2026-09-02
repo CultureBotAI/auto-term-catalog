@@ -53,7 +53,7 @@ GENERIC_RE = re.compile(
     r"\b(sources?|compounds?|substrates?|sugars?|various|several|some|other|many|multiple|range of|"
     r"a variety|different|elements?|ions|metals|hydrocarbons|organic matter|and oligo|fluid|mucus)\b", re.I)
 VALUE_RE = re.compile(r"^\s*[\d\.\-–,]+\s*(?:%|mM|M\b|g/l|mg/l|\(w/v\)|°C|℃|\s\S)", re.I)
-# phenotype/trait-like phrases that landed in the chemical slot -> METPO candidates
+# enzyme-activity / assay phrases that landed in the chemical slot -> METPO function/assay candidates
 TRAIT_RE = re.compile(
     r"\b(\w{3,}ase|H2/CO2|autotroph\w*|heterotroph\w*|motil\w+|spore\w*|gram[- ]\w+|aerob\w*|anaerob\w*|"
     r"halophil\w*|thermophil\w*|psychrophil\w*|alkaliphil\w*|acidophil\w*|indole(?![- ]?\d|[- ]acetic)|nitrate reduction|"
@@ -170,11 +170,13 @@ def md_table(df: pd.DataFrame, max_rows: int | None = None) -> str:
     if df.empty:
         return "_(none)_\n"
     # escape literal pipes (e.g. multi-valued kg_category "a|b|c") so cells don't
-    # split into extra markdown columns and shift numeric columns sideways
+    # split into extra markdown columns and shift numeric columns sideways;
+    # no dtype gate — pandas 3 reads strings as `str` dtype, not `object`
     df = df.copy()
+    esc = lambda x: x.replace("|", "\\|") if isinstance(x, str) else x
     for c in df.columns:
-        if df[c].dtype == object:
-            df[c] = df[c].map(lambda x: x.replace("|", "\\|") if isinstance(x, str) else x)
+        df[c] = df[c].map(esc)
+    df.columns = [esc(c) for c in df.columns]
     return df.to_markdown(index=False) + "\n"
 
 
@@ -183,7 +185,8 @@ def ctx_example(label: str, ctx: str) -> str:
     can hold several bracketed mentions; fall back to the first one)."""
     if not ctx:
         return ""
-    m = re.search(r"\[\[" + re.escape(label), ctx, re.IGNORECASE)
+    m = (re.search(r"\[\[" + re.escape(label) + r"\]\]", ctx, re.IGNORECASE)  # exact mention
+         or re.search(r"\[\[" + re.escape(label), ctx, re.IGNORECASE))  # prefix (spans can be cut)
     i = m.start() if m else ctx.find("[[")
     start = max(0, i - 35) if i >= 0 else 0
     end = start + 110
@@ -471,7 +474,7 @@ def main() -> int:
                 sub = sub.copy()
                 sub["example_context"] = [ctx_example(l, c) for l, c in zip(sub[R["label"]], sub[R["context"]])]
                 aggs["example_context"] = ("example_context", lambda s: next((x for x in s if x), ""))
-            return sub.groupby(cols, sort=False).agg(**aggs).reset_index().sort_values("rows", ascending=False)
+            return sub.groupby(cols, sort=False).agg(**aggs).reset_index().sort_values("rows", ascending=False, kind="stable")
 
         syn = df[grounded & (df[R["match_type"]] == "synonym")]
         short = fp_table(syn[syn[R["label"]].str.len() <= 2], [R["label"], R["kg_name"], R["grounded_id"]])
@@ -501,7 +504,7 @@ def main() -> int:
         onedf["direction"] = ["label generic → kg specific" if not stereo_prefixes(l) else "label specific → kg generic (descriptor dropped)"
                               for l in onedf[R["label"]]]
         onedf = fp_table(onedf, [R["label"], R["kg_name"], R["grounded_id"], R["match_type"], "direction"])
-        onedf = onedf.sort_values(["direction", "rows"], ascending=[True, False])
+        onedf = onedf.sort_values(["direction", "rows"], ascending=[True, False], kind="stable")
         P(f"\n**Stereo prefix on one side only** ({len(onedf)} unique). Generic→specific (`maltose`→D-maltose) is usually acceptable; specific→generic (`d-lactose`→lactose) means the grounding dropped a descriptor the extractor captured — check:\n")
         P(md_table(onedf, args.top))
     if R["kg_category"] and kind_col and R["grounded_id"]:
@@ -536,7 +539,7 @@ def main() -> int:
     noise = {
         "value/unit only": lab.str.fullmatch(r"[\d\.\-–,\s%]+(?:\s*(?:%|mM|M|g/l|g/L|w/v|°C|℃))?") & chem_mask,
         "placeholder": lab.apply(lambda x: bool(UNSPEC_RE.search(x))),
-        "≥6 words (value/context leaked into the label)": (lab.str.split().str.len() >= 6) & (df[kind_col] != "phenotype_observation" if kind_col else True),
+        "≥6 words (verbose label; often value/context leaked in)": (lab.str.split().str.len() >= 6) & (df[kind_col] != "phenotype_observation" if kind_col else True),
     }
     any_noise = bucket_table(noise, "noise type")
     P(f"\n- Rows matching ≥1 noise pattern: **{any_noise.sum():,} / {len(df):,} ({any_noise.mean()*100:.1f}%)**\n")
@@ -548,7 +551,9 @@ def main() -> int:
         "growth medium / complex component (→ MediaDive)": has(lab, MEDIUM_RE) & chem_mask,
     }
     any_rt = bucket_table(retarget, "modeling target")
-    P(f"\n- Rows in a retarget bucket: **{any_rt.sum():,} / {len(df):,} ({any_rt.mean()*100:.1f}%)**\n")
+    both = int((any_noise & any_rt).sum())
+    P(f"\n- Rows in a retarget bucket: **{any_rt.sum():,} / {len(df):,} ({any_rt.mean()*100:.1f}%)**"
+      + (f" — {both} of these also match a noise pattern (verbose media labels)" if both else "") + "\n")
 
     # --- 6c recall / truncation proxies ---
     P("\n### 5c. Incomplete or truncated extraction (recall proxies)\n")
