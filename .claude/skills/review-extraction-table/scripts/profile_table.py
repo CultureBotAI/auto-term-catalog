@@ -771,9 +771,14 @@ def main() -> int:
             ex = ex.drop_duplicates("rule")[["label", "full_scientific_name", "name_source"]]
             P("\n_One example per rule:_\n")
             P(md_table(ex))
-            multi = stn[stn["full_scientific_name"] != ""].groupby(["doc", "assigned_taxon"])["label"].nunique()
+            def n_distinct(s: pd.Series) -> int:
+                # collapse labels that are a whitespace-suffix of another (same strain, two spellings)
+                labs = sorted(set(s))
+                return len([l for l in labs if not any(o != l and o.endswith(" " + l) for o in labs)])
+
+            multi = stn[stn["full_scientific_name"] != ""].groupby(["doc", "assigned_taxon"])["label"].agg(n_distinct)
             multi = multi[multi > 1]
-            P(f"\n- (doc, taxon) pairs assigned to >1 distinct strain label: {len(multi):,} — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.\n")
+            P(f"\n- (doc, taxon) pairs assigned to >1 distinct strain label (suffix spellings of one label collapsed): {len(multi):,} — mostly one strain under several collection accessions; the script prints a QC line for those not `=`-linked.\n")
             unres = stn[stn["full_scientific_name"] == ""]
             eq_shape = unres["context"].str.contains(r"=\s*\[\[", regex=True).sum()
             P(f"- Unresolved rows whose mention is an `=`-linked accession (primary designation itself unresolved): {eq_shape:,} of {len(unres):,}\n")

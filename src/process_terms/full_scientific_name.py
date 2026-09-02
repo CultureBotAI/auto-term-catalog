@@ -88,7 +88,8 @@ EQUIV = re.compile(r"(\S+(?: \S+)?)\s*\(?\s*=\s*\[\[")
 # label opens with a binomial/abbreviation followed by the strain designation
 LABEL_BINOMIAL = re.compile(rf"^({BINOMIAL}|{ABBREV})['’]?\s+(\S.*)$")
 # words that make a label-only candidate a taxon placeholder, not a binomial
-NON_SPECIES_IN_LABEL = {"bacterium", "bacteria", "archaeon", "archaea"}
+NON_SPECIES_IN_LABEL = {"bacterium", "bacteria", "archaeon", "archaea", "cyanobacterium",
+                        "proteobacterium", "actinobacterium", "endosymbiont", "symbiont", "subdivision"}
 
 
 def compose(taxon: str, label: str) -> str:
@@ -250,6 +251,8 @@ def rule_label_binomial(label: str, full: set[str], abbrev: dict[str, str]) -> s
     if not m:
         return ""
     cand, rest = norm_taxon(m.group(1)), m.group(2)
+    if rest.startswith("subsp."):
+        return ""  # bare trinomial: the optional subsp. group backtracked into the remainder, no designation
     genus, species = cand.split(" ")[0], cand.split(" ")[1]
     if genus in NON_GENUS or species in NON_SPECIES:
         return ""
@@ -262,9 +265,9 @@ def rule_label_binomial(label: str, full: set[str], abbrev: dict[str, str]) -> s
     # without the document's backing, reject placeholder species words and family/order names
     if species in NON_SPECIES_IN_LABEL or genus.endswith(("aceae", "ales")):
         return ""
-    if re.fullmatch(ABBREV, cand):
-        return cand  # unexpandable abbreviation: keep as spelled
-    return validate_binomial(cand, full, abbrev) or cand
+    # accept as spelled: for a label-carried binomial the label is stronger evidence than a
+    # fuzzy (lev<=2) match to a doc taxon, which could silently substitute a sister species
+    return cand
 
 
 def rule_equivalence(context: str, resolved: dict[str, str]) -> tuple[str, str]:
@@ -297,7 +300,7 @@ def add_full_names(df: pd.DataFrame) -> pd.DataFrame:
     )
     strain_idx = df.index[df["field"] == "strains"]
 
-    # pass 1: rules 1-2 and 4
+    # pass 1: rules 1-4
     resolved_by_doc: dict[str, dict[str, str]] = {}
     for i in strain_idx:
         doc, label, ctx = df.at[i, "doc"], df.at[i, "label"], df.at[i, "context"]
@@ -367,6 +370,9 @@ def main() -> int:
     tstr = res[res["label"].str.endswith("T")]
     for (doc, taxon), grp in tstr.groupby(["doc", "assigned_taxon"]):
         labs = sorted(set(grp["label"]))
+        # a label that is a whitespace-suffix of another (`CBS 10308T` vs
+        # `Fonsecazyma mujuensis CBS 10308T`) is the same strain, not a conflict
+        labs = [l for l in labs if not any(o != l and o.endswith(" " + l) for o in labs)]
         if len(labs) < 2:
             continue
         ctx = " ".join(df.loc[df["doc"] == doc, "context"])
