@@ -14,7 +14,9 @@ tolerates minor schema drift (see ROLE_CANDIDATES).
 from __future__ import annotations
 
 import argparse
+import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -216,6 +218,27 @@ def main() -> int:
     P = L.append
     P(f"# Extraction table review: `{args.table.name}`\n")
     P(f"- Size on disk: {args.table.stat().st_size/1e6:.1f} MB\n- Rows: {len(df):,}\n- Columns: {len(df.columns)}\n")
+
+    # ---------------- PROVENANCE ----------------
+    script = Path(__file__).resolve()
+    try:
+        commit = subprocess.run(["git", "-C", str(script.parent), "log", "-1", "--format=%h", "--", script.name],
+                                capture_output=True, text=True, timeout=10).stdout.strip() or "uncommitted"
+        dirty = bool(subprocess.run(["git", "-C", str(script.parent), "status", "--porcelain", "--", script.name],
+                                    capture_output=True, text=True, timeout=10).stdout.strip())
+    except Exception:
+        commit, dirty = "unknown", False
+    try:
+        script_rel = os.path.relpath(script)
+    except ValueError:  # different drive on Windows
+        script_rel = str(script)
+    P(f"\n> **Provenance.** Every number in this report is computed by `{script_rel}`"
+      f" (git {commit}{' + local edits' if dirty else ''}; pandas {pd.__version__}, Python {sys.version.split()[0]})"
+      " — deterministic pandas filters, group-bys and regex matches over the raw table."
+      " No count is hand-entered or model-generated; each section states what its check computes,"
+      " and re-running the command below on the same table reproduces the numbers exactly."
+      " Only prose written *around* this report (interpretation, recommendations) comes from a reviewer.\n>\n"
+      f"> `python {script_rel} {args.table} --out <report.md> [--catalog-out <catalog.tsv>] [--top N]`\n")
 
     # ---------------- STRUCTURE ----------------
     P("\n## 1. Structure\n")
@@ -663,23 +686,23 @@ def main() -> int:
 
     # --- 6e process / prompt gaps ---
     P("\n### 5e. Process and prompt-instruction gaps\n")
-    P("\n_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm._\n")
+    P("\n_Signals that the extraction agent is not following (or is not given) a consistent instruction. Needs the prompt/schema to confirm. Each bullet names its computation so the count can be re-derived from the table._\n")
     ph = lab[lab.apply(lambda x: bool(UNSPEC_RE.search(x)))].value_counts()
-    P(f"\n- Placeholder spellings: **{len(ph)}** variants ({', '.join(f'`{v}`' for v in ph.index[:8])}) — prompt should say *omit* rather than emit a placeholder, or fix one spelling\n")
+    P(f"\n- Placeholder spellings: **{len(ph)}** variants ({', '.join(f'`{v}`' for v in ph.index[:8])}) — prompt should say *omit* rather than emit a placeholder, or fix one spelling _(distinct labels matching the anchored regex `unspecified|not specified|not stated|unknown|none|n/a`)_\n")
     if R["field"]:
         present = set(df[R["field"]].unique())
-        P(f"- Fields present: {sorted(present)}; expected-but-absent: {sorted(EXPECTED_FIELDS - present) or 'none'}; unexpected: {sorted(present - EXPECTED_FIELDS) or 'none'}\n")
+        P(f"- Fields present: {sorted(present)}; expected-but-absent: {sorted(EXPECTED_FIELDS - present) or 'none'}; unexpected: {sorted(present - EXPECTED_FIELDS) or 'none'} _(distinct `{R['field']}` values vs the expected slot list)_\n")
     if kind_col and R["label"]:
         multi_kind = df.groupby(R["label"])[kind_col].nunique()
         multi_kind = multi_kind[multi_kind > 1]
-        P(f"- Labels assigned to more than one `{kind_col}` across documents: **{len(multi_kind):,}** (inconsistent typing) e.g. {', '.join(f'`{x}`' for x in multi_kind.index[:8])}\n")
+        P(f"- Labels assigned to more than one `{kind_col}` across documents: **{len(multi_kind):,}** (inconsistent typing) e.g. {', '.join(f'`{x}`' for x in multi_kind.index[:8])} _(group rows by label, count labels with >1 distinct `{kind_col}`)_\n")
         if len(multi_kind):
             flags.append(f"{len(multi_kind):,} labels typed inconsistently across docs (>1 {kind_col})")
     prov = [c for c in df.columns if re.search(r"model|prompt|schema|version|run", c, re.I)]
-    P(f"- Provenance columns (model/prompt/schema/version): **{prov or 'none'}** — add them upstream so results can be tied to a run\n")
+    P(f"- Provenance columns (model/prompt/schema/version): **{prov or 'none'}** — add them upstream so results can be tied to a run _(column names searched for model/prompt/schema/version/run)_\n")
     if R["label"]:
         distinct = lab.groupby(lab.str.lower()).nunique()
-        P(f"- Labels differing only by case: **{(distinct > 1).sum():,}** (no normalization step) e.g. {', '.join(f'`{x}`' for x in distinct[distinct > 1].index[:6])}\n")
+        P(f"- Labels differing only by case: **{(distinct > 1).sum():,}** (no normalization step) e.g. {', '.join(f'`{x}`' for x in distinct[distinct > 1].index[:6])} _(lowercased labels with >1 distinct original spelling)_\n")
 
     # --- 5f strain name resolution (src/process_terms/full_scientific_name.py) ---
     P("\n### 5f. Strain name resolution (`Genus species STRAIN`)\n")
@@ -714,6 +737,7 @@ def main() -> int:
 
     # ---------------- FLAGS ----------------
     P("\n\n## 6. Flags\n")
+    P("\n_Each flag is emitted by one of the checks above; its count is defined (and re-derivable) in that section._\n")
     if flags:
         for f in flags:
             P(f"- ⚠️ {f}")

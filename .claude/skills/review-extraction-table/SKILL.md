@@ -48,6 +48,14 @@ Key facts about the format:
    4 Ungrounded-term catalog, 5 Extraction quality, 6 Flags. Create `reports/` if missing. Commit the
    `.review.md`; the catalog `.tsv` is gitignored (regenerable in seconds).
 
+   **Every number in the report is code-computed** — deterministic pandas
+   filters, group-bys, and regex matches in `profile_table.py`; no count is
+   hand-entered or model-generated. The report's own *Provenance* block (top
+   of the file) records the script's git commit, library versions, and the
+   exact regeneration command, so any count can be reproduced or audited. If
+   a reader asks "where does this number come from?", point at that block
+   and the section's italic method note.
+
 2. **Read the report and interpret — don't just paste it.** For each section
    answer:
    - *Structure*: does the schema match the expected columns? Any role the
