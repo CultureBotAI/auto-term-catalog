@@ -1,0 +1,246 @@
+id: http://w3id.org/ontogpt/chemical_utilization
+name: chemical_utilization_no_grounding
+title: Chemical Utilization Template
+description: >-
+  A custom template for extracting microbial study taxa, strain identifiers,
+  mentioned chemicals, strain-to-chemical utilization relationships, and
+  strain-to-taxon relationships from microbiology abstracts.
+license: https://creativecommons.org/publicdomain/zero/1.0/
+prefixes:
+  rdf: http://www.w3.org/1999/02/22-rdf-syntax-ns#
+  linkml: https://w3id.org/linkml/
+  NCBITaxon: http://purl.obolibrary.org/obo/NCBITAXON_
+  CHEBI: http://purl.obolibrary.org/obo/CHEBI_
+  METPO: http://purl.obolibrary.org/obo/METPO_
+  AUTO: http://w3id.org/ontogpt/auto/
+  chemical_utilization: http://w3id.org/ontogpt/chemical_utilization/
+
+default_prefix: chemical_utilization
+default_range: string
+
+imports:
+  - linkml:types
+  - core
+
+classes:
+  ChemicalUtilizationDocument:
+    tree_root: true
+    description: >-
+      A microbiology document containing taxa, strains, chemicals, chemical
+      utilization statements, and strain-to-taxon relationships.
+    attributes:
+      pmid:
+        description: The PubMed identifier for the article.
+        range: string
+        annotations:
+          prompt: the PMID for the article, if present. Leave blank if absent;
+            do not write "none", "unknown", or "not present".
+      study_taxa:
+        description: >-
+          Semicolon separated list of focal taxa studied or described in the
+          text, usually the novel species or taxa proposed by the article.
+        range: StudyTaxon
+        multivalued: true
+        annotations:
+          prompt: >-
+            a semicolon separated list of the microbial taxa that are the main
+            study organisms in the text
+      strains:
+        description: >-
+          Semicolon separated list of strain, isolate, culture collection, or
+          type strain identifiers mentioned in the text.
+        range: Strain
+        multivalued: true
+        annotations:
+          prompt: >-
+            a semicolon separated list of strain or isolate designations
+            mentioned in the text
+      chemicals_mentioned:
+        description: >-
+          Semicolon separated list of chemicals, substrates, metabolites,
+          nutrients, electron donors, electron acceptors, or media components
+          that are explicitly connected to growth, utilization, production, or
+          metabolism in the text.
+        range: ChemicalEntity
+        multivalued: true
+        annotations:
+          prompt: >-
+            a semicolon separated list of chemicals, substrates, nutrients,
+            electron donors, electron acceptors, or media components explicitly
+            connected to growth, utilization, production, or metabolism in the
+            text. Omit fatty acid profiles, polar lipids, quinones, pigments,
+            genome features, plasmids, genes, proteins, pH, temperature, NaCl
+            tolerance ranges, and taxonomic markers unless the text explicitly
+            states that the strain uses, metabolizes, produces, degrades,
+            oxidizes, reduces, ferments, or requires them. Never include
+            chemotaxonomic markers just because they are described as present,
+            dominant, major, or abundant. This includes fatty acids, polar
+            lipids, pigments, and respiratory quinones such as MK-8, Q-8,
+            Q-10, menaquinone, and ubiquinone. Only include these entities if
+            there is an explicit strain-to-chemical utilization relationship
+            with one of the allowed chemical_utilizations predicates. Leave
+            blank if there are no qualifying chemicals; do not write "none",
+            "unknown", or "not present".
+      chemical_utilizations:
+        description: >-
+          Semicolon separated list of strain-to-chemical relationships,
+          represented as subject-predicate-object triples.
+        range: ChemicalUtilizationRelationship
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        annotations:
+          prompt: >-
+            a semicolon separated list of strain-to-chemical relationships in
+            the form "<strain>, <chemical>, <predicate>". Use only these
+            predicates: uses_for_growth, uses_as_carbon_source,
+            uses_as_energy_source, uses_as_electron_donor,
+            uses_as_electron_acceptor, ferments, oxidizes, reduces, hydrolyzes,
+            degrades, produces, requires_for_growth, does_not_use_for_growth,
+            tolerates. Extract only growth, metabolism, substrate use,
+            production, degradation, oxidation/reduction, fermentation, required
+            nutrients, or tolerance relationships. Omit fatty acid composition,
+            polar lipids, quinones, pigments, genome features, plasmids, genes,
+            proteins, phylogenetic markers, and taxonomic diagnostic features.
+            Do not infer electron-acceptor use from "major respiratory quinone"
+            or similar chemotaxonomic marker statements. Leave blank if there
+            are no qualifying relationships; do not write "none", "unknown",
+            or "not present".
+      strain_relationships:
+        description: >-
+          Semicolon separated list of strain-to-taxon relationships,
+          represented as subject-predicate-object triples.
+        range: StrainRelationship
+        multivalued: true
+        inlined: true
+        inlined_as_list: true
+        annotations:
+          prompt: >-
+            a semicolon separated list of strain-to-taxon relationships in the
+            form "<strain>, <predicate>, <taxon>". Use only these predicates:
+            strain_of, type_strain_of, reference_strain_of, isolate_of,
+            variant_of, derived_from, identical_to, deposited_as. If the text
+            says "type strain", "represents a novel species", "proposed as",
+            or gives a type strain designation for a named taxon, use
+            type_strain_of. If the text gives equivalent culture collection
+            identifiers using equals signs, use deposited_as. Omit vague
+            phylogenetic or similarity statements such as "closely related to",
+            "affiliated with", "similar to", "member of", or "highest
+            similarity to". Omit host, environmental source, sample source, and
+            isolation location relationships. Leave blank if there are no
+            qualifying relationships; do not write "none", "unknown", or "not
+            present".
+
+  ChemicalUtilizationRelationship:
+    is_a: Triple
+    description: >-
+      A triple linking a strain or isolate to a chemical entity through a
+      utilization, metabolic, or growth-related predicate.
+    slot_usage:
+      subject:
+        range: Strain
+        description: The strain, isolate, or culture collection identifier.
+      predicate:
+        range: ChemicalUtilizationPredicate
+        description: The type of strain-to-chemical relationship.
+      object:
+        range: ChemicalEntity
+        description: The chemical entity involved in the relationship.
+
+  StrainRelationship:
+    is_a: Triple
+    description: >-
+      A triple linking a strain or isolate identifier to the taxon it belongs
+      to or typifies.
+    slot_usage:
+      subject:
+        range: Strain
+        description: The strain, isolate, or culture collection identifier.
+      predicate:
+        range: StrainRelationshipPredicate
+        description: The type of strain-to-taxon relationship.
+      object:
+        range: StudyTaxon
+        description: The parent microbial taxon.
+
+  StudyTaxon:
+    is_a: NamedEntity
+    description: A microbial taxon mentioned as a focal study organism.
+    id_prefixes:
+      - NCBITaxon
+      - AUTO
+
+  Strain:
+    is_a: NamedEntity
+    description: A strain, isolate, or collection identifier.
+    id_prefixes:
+      - AUTO
+
+  ChemicalEntity:
+    is_a: NamedEntity
+    description: >-
+      A chemical, substrate, metabolite, growth substrate, or other named
+      chemical entity.
+    id_prefixes:
+      - CHEBI
+      - AUTO
+
+enums:
+  ChemicalUtilizationPredicate:
+    description: >-
+      A controlled microbial phenotype or metabolism predicate for relating a
+      strain to a chemical, substrate, nutrient, or condition.
+    permissible_values:
+      uses_for_growth:
+        description: The strain uses the chemical, substrate, or nutrient for growth.
+      uses_as_carbon_source:
+        description: The strain uses the chemical as a carbon source.
+      uses_as_energy_source:
+        description: The strain uses the chemical as an energy source.
+      uses_as_electron_donor:
+        description: The strain uses the chemical as an electron donor.
+      uses_as_electron_acceptor:
+        description: The strain uses the chemical as an electron acceptor.
+      ferments:
+        description: The strain ferments the chemical or substrate.
+      oxidizes:
+        description: The strain oxidizes the chemical or substrate.
+      reduces:
+        description: The strain reduces the chemical or substrate.
+      hydrolyzes:
+        description: The strain hydrolyzes the chemical or substrate.
+      degrades:
+        description: The strain degrades the chemical or substrate.
+      produces:
+        description: The strain produces the chemical or metabolite.
+      requires_for_growth:
+        description: The strain requires the chemical or nutrient for growth.
+      does_not_use_for_growth:
+        description: The strain does not use the chemical or substrate for growth.
+      tolerates:
+        description: The strain tolerates the chemical or condition.
+    annotations:
+      prompt.examples: >-
+        uses_for_growth, uses_as_carbon_source, uses_as_energy_source,
+        uses_as_electron_donor, uses_as_electron_acceptor, ferments, oxidizes,
+        reduces, hydrolyzes, degrades, produces, requires_for_growth,
+        does_not_use_for_growth, tolerates
+
+  StrainRelationshipPredicate:
+    permissible_values:
+      strain_of:
+        description: The identifier refers to a strain of the taxon.
+      type_strain_of:
+        description: The identifier refers to the type strain of the taxon.
+      reference_strain_of:
+        description: The identifier refers to a reference strain of the taxon.
+      isolate_of:
+        description: The identifier refers to an isolate of the taxon.
+      variant_of:
+        description: The identifier refers to a variant of the taxon.
+      derived_from:
+        description: The identifier refers to material derived from the taxon.
+      identical_to:
+        description: The identifier is explicitly stated to be identical to another taxon-linked identifier.
+      deposited_as:
+        description: The identifier is a deposited culture collection alias for the same strain.

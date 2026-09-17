@@ -1,0 +1,26 @@
+{
+  "corpus": {
+    "manifest": "config/ijsem_first1000_manifest.tsv",
+    "document_limit": 1000,
+    "documents_dir": "work/ijsem_first1000/abstracts"
+  },
+  "ontogpt": {
+    "template": "src/templates/chemical_utilization_no_grounding.yaml",
+    "model": "openai/gpt-4.1-mini",
+    "model_provider": "openai",
+    "api_base": "https://api.cborg.lbl.gov",
+    "temperature": 0.0,
+    "batch_size": 100,
+    "batch_dir": "work/ijsem_first1000/ontogpt_batches",
+    "extraction_output": "work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_no_grounding.yaml"
+  },
+  "grounding": {
+    "max_edge_evidence": 5,
+    "strict_relationships": true,
+    "expand_growth_conditions": true
+  },
+  "output": {
+    "grounded_tsv": "data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv",
+    "entities_tsv": "work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.entities.tsv"
+  }
+}
