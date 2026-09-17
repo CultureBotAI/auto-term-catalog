@@ -43,31 +43,123 @@ The extraction settings are committed in
 | Abstract count | `1000` |
 | Maximum KG edge evidence rows | `5` |
 
-### Install
+## Setup
 
-Use Python 3.11 or newer and install the pinned extraction dependencies:
+The pipeline needs Python 3.11 or newer, network access to Europe PMC and the
+configured model endpoint, and local snapshots of:
+
+- `merged-kg_nodes.tsv`
+- `merged-kg_edges.tsv`
+- `metpo.owl`
+
+Clone the repository and install the pinned extraction dependencies in an
+isolated environment:
 
 ```bash
+git clone git@github.com:CultureBotAI/auto-term-catalog.git
+cd auto-term-catalog
 python3 -m venv .venv
 source .venv/bin/activate
+python3 -m pip install --upgrade pip
 python3 -m pip install -r requirements-extraction.txt
 ```
 
-Download compatible `merged-kg_nodes.tsv`, `merged-kg_edges.tsv`, and
-`metpo.owl` snapshots. Set the CBORG credential without writing it into the
-repository:
+### Environment variables and credentials
+
+The default configuration calls the CBORG endpoint. It requires the following
+credential at run time:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `CBORG_API_KEY` | Yes for a new default-config extraction | Authentication for `https://api.cborg.lbl.gov`; the runner passes it to OntoGPT as `OPENAI_API_KEY` in the child process because that is the variable expected by the OpenAI-compatible client. |
+| `OPENAI_API_KEY` | Alternative | Accepted directly when it contains a credential valid for the API endpoint selected in the pipeline configuration. If both variables exist, `OPENAI_API_KEY` takes precedence. |
+
+Europe PMC does not require an API key for this workflow. Grounding is local
+and requires no credential.
+
+For convenience, these non-secret path variables are used in the commands
+below: `MERGED_KG_NODES`, `MERGED_KG_EDGES`, and `METPO_OWL`. They are shell
+variables, not implicit pipeline configuration; the command passes their
+values to the corresponding arguments.
+
+Copy the example file, edit only the ignored `.env`, and load it into the
+current shell:
 
 ```bash
-export CBORG_API_KEY='...'
+cp .env.example .env
+chmod 600 .env
+# Edit .env and set CBORG_API_KEY plus the three absolute input paths.
+set -a
+source .env
+set +a
 ```
 
-### Run from Europe PMC abstracts
+`.env`, `.env.local`, and environment-specific local variants are ignored by
+Git. `.env.example` contains variable names and placeholders only. Before
+committing, confirm that no credential is staged:
+
+```bash
+git status --short
+git diff --cached
+```
+
+Do not put API keys in the JSON configuration, command arguments, logs, or
+committed shell scripts.
+
+## Run the complete pipeline
+
+This command fetches the manifest's IJSEM abstracts from Europe PMC, runs
+OntoGPT, locates source mentions, grounds entities and relationships, expands
+growth-condition observations, and exports the final table:
 
 ```bash
 python3 scripts/run_ijsem_pipeline.py \
-  --nodes /path/to/merged-kg_nodes.tsv \
-  --edges /path/to/merged-kg_edges.tsv \
-  --metpo /path/to/metpo.owl
+  --config config/ijsem_first1000_pipeline.json \
+  --nodes "$MERGED_KG_NODES" \
+  --edges "$MERGED_KG_EDGES" \
+  --metpo "$METPO_OWL"
+```
+
+Default generated paths are:
+
+| Artifact | Path |
+| --- | --- |
+| Verified abstracts | `work/ijsem_first1000/abstracts/` |
+| OntoGPT batch inputs, outputs, and logs | `work/ijsem_first1000/ontogpt_batches/` |
+| Combined OntoGPT extraction | `work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_no_grounding.yaml` |
+| Extraction run metadata | The same path with `.run.json` appended |
+| Flattened mention/entity table | `work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.entities.tsv` |
+| Final grounded table | `data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv` |
+
+The `work/` directory and logs are ignored. Preserve the combined extraction
+YAML and its run metadata outside the repository if an exact model-run replay
+must be retained.
+
+### Run each stage separately
+
+The orchestrator above is equivalent to these three commands:
+
+```bash
+python3 scripts/fetch_ijsem_abstracts.py \
+  --manifest config/ijsem_first1000_manifest.tsv \
+  --output-dir work/ijsem_first1000/abstracts
+
+python3 scripts/run_ontogpt_extraction.py \
+  --config config/ijsem_first1000_pipeline.json \
+  --documents-dir work/ijsem_first1000/abstracts \
+  --output work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_no_grounding.yaml
+
+scripts/generate_merged_kg_grounded_tsv.sh \
+  --extraction work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_no_grounding.yaml \
+  --documents-dir work/ijsem_first1000/abstracts \
+  --nodes "$MERGED_KG_NODES" \
+  --edges "$MERGED_KG_EDGES" \
+  --metpo "$METPO_OWL" \
+  --max-documents 1000 \
+  --max-edge-evidence 5 \
+  --expand-growth-conditions \
+  --entities-output work/ijsem_first1000/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.entities.tsv \
+  --output data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv
 ```
 
 The fetch stage checks every abstract against the committed manifest. If
@@ -75,13 +167,14 @@ Europe PMC content has changed, it exits instead of silently generating a
 different corpus. `--allow-content-drift` is available on the fetch script for
 an intentional manifest refresh.
 
-You can inspect all OntoGPT commands without calling the model:
+You can validate the corpus and inspect the generated OntoGPT commands without
+setting an API key or calling the model:
 
 ```bash
 python3 scripts/run_ijsem_pipeline.py \
-  --nodes /path/to/merged-kg_nodes.tsv \
-  --edges /path/to/merged-kg_edges.tsv \
-  --metpo /path/to/metpo.owl \
+  --nodes "$MERGED_KG_NODES" \
+  --edges "$MERGED_KG_EDGES" \
+  --metpo "$METPO_OWL" \
   --documents-dir /path/to/verified/abstracts \
   --dry-run-extraction
 ```
@@ -95,9 +188,9 @@ stream, supply both the extraction and the verified source abstracts:
 python3 scripts/run_ijsem_pipeline.py \
   --extraction /path/to/ontogpt-extraction.yaml \
   --documents-dir /path/to/verified/abstracts \
-  --nodes /path/to/merged-kg_nodes.tsv \
-  --edges /path/to/merged-kg_edges.tsv \
-  --metpo /path/to/metpo.owl \
+  --nodes "$MERGED_KG_NODES" \
+  --edges "$MERGED_KG_EDGES" \
+  --metpo "$METPO_OWL" \
   --output /path/to/result_merged_kg_grounded.tsv
 ```
 

@@ -4,3 +4,6 @@ reports/*.tsv
 .venv/
 work/
 *.log
+.env
+.env.local
+.env.*.local
