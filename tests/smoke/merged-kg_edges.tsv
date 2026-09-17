@@ -1,0 +1,5 @@
+id	subject	predicate	object
+smoke-edge-1	CHEBI:17234	biolink:subclass_of	CHEBI:24431
+smoke-edge-2	CHEBI:26710	biolink:subclass_of	CHEBI:24866
+smoke-edge-3	kgmicrobe.strain:TEST-1T	biolink:in_taxon	NCBITaxon:999999
+smoke-edge-4	NCBITaxon:999999	biolink:has_participant	kgmicrobe.strain:TEST-1T

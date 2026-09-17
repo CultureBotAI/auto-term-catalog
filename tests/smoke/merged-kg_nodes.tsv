@@ -1,0 +1,20 @@
+id	category	name	synonym
+CHEBI:17234	biolink:ChemicalEntity|biolink:SmallMolecule	D-glucose	glucose
+CHEBI:26710	biolink:ChemicalEntity|biolink:SmallMolecule	sodium chloride	NaCl|salt
+NCBITaxon:999999	biolink:OrganismTaxon	Testibacter exampleii	Testibacter exampleii
+kgmicrobe.strain:TEST-1T	biolink:OrganismTaxon	TEST-1T	TEST-1T
+METPO:2000507	biolink:Association	has optimum NaCl observation	has optimum NaCl observation
+METPO:2000508	biolink:Association	has growth NaCl observation	has growth NaCl observation
+METPO:2000509	biolink:Association	has range NaCl observation	has range NaCl observation
+METPO:2000053	biolink:Association	has optimum temperature observation	has optimum temperature observation
+METPO:1001001	biolink:OntologyClass	optimum temperature observation	optimum temperature observation
+METPO:2000054	biolink:Association	has growth temperature observation	has growth temperature observation
+METPO:1001002	biolink:OntologyClass	growth temperature observation	growth temperature observation
+METPO:2000055	biolink:Association	has range temperature observation	has range temperature observation
+METPO:1001003	biolink:OntologyClass	temperature range observation	temperature range observation
+METPO:2000501	biolink:Association	has optimum pH observation	has optimum pH observation
+METPO:1001013	biolink:OntologyClass	optimum pH observation	optimum pH observation
+METPO:2000502	biolink:Association	has growth pH observation	has growth pH observation
+METPO:1001012	biolink:OntologyClass	growth pH observation	growth pH observation
+METPO:2000503	biolink:Association	has range pH observation	has range pH observation
+METPO:1001015	biolink:OntologyClass	pH range observation	pH range observation

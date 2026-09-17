@@ -207,6 +207,25 @@ checksums make those portions auditable. A fresh LLM inference can still vary
 despite temperature zero, so retain the generated OntoGPT YAML and run metadata
 when exact replay of a model run is required.
 
+## Offline end-to-end smoke test
+
+A one-abstract fixture exercises the OntoGPT extraction-output contract, PMID
+association, span/context location, CHEBI/NCBITaxon/METPO/kg-microbe grounding,
+core TSV export, deterministic replay, and the existing table-review
+profiler:
+
+```bash
+python3 -m pip install -r requirements-extraction.txt
+python3 -m pip install -r .claude/skills/review-extraction-table/requirements.txt
+tests/smoke/run_smoke_test.sh
+```
+
+The command writes an inspectable table and Markdown review to `work/smoke/`.
+It runs without an API key or network call; the model response is represented
+by a committed OntoGPT YAML fixture. See
+[`tests/smoke/README.md`](tests/smoke/README.md) for fixture contents, asserted
+groundings, and an alternate output-directory argument.
+
 ## Grounding behavior
 
 - YAML documents are paired with abstracts by exact normalized full-text

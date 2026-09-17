@@ -1,0 +1,1 @@
+Strain TEST-1T represents Testibacter exampleii. Strain TEST-1T uses glucose as a carbon source and tolerates NaCl.

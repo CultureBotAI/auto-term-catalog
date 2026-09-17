@@ -1,0 +1,36 @@
+input_text: >-
+  Strain TEST-1T represents Testibacter exampleii. Strain TEST-1T uses glucose as a carbon source and tolerates NaCl.
+raw_completion_output: |-
+  study_taxa: Testibacter exampleii
+  strains: TEST-1T
+  chemicals_mentioned: glucose; NaCl
+  chemical_utilizations: TEST-1T, glucose, uses_as_carbon_source; TEST-1T, NaCl, tolerates
+  strain_relationships: TEST-1T, type_strain_of, Testibacter exampleii
+extracted_object:
+  study_taxa:
+    - AUTO:Testibacter%20exampleii
+  strains:
+    - AUTO:TEST-1T
+  chemicals_mentioned:
+    - AUTO:glucose
+    - AUTO:NaCl
+  chemical_utilizations:
+    - subject: AUTO:TEST-1T
+      predicate: uses_as_carbon_source
+      object: AUTO:glucose
+    - subject: AUTO:TEST-1T
+      predicate: tolerates
+      object: AUTO:NaCl
+  strain_relationships:
+    - subject: AUTO:TEST-1T
+      predicate: type_strain_of
+      object: AUTO:Testibacter%20exampleii
+named_entities:
+  - id: AUTO:TEST-1T
+    label: TEST-1T
+  - id: AUTO:Testibacter%20exampleii
+    label: Testibacter exampleii
+  - id: AUTO:glucose
+    label: glucose
+  - id: AUTO:NaCl
+    label: NaCl
