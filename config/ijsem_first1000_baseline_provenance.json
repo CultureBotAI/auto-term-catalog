@@ -1,0 +1,101 @@
+{
+  "provenance_schema_version": 1,
+  "baseline": {
+    "name": "cborg_gpt41mini",
+    "review_status": "reviewed baseline",
+    "run_date": "2026-08-24",
+    "run_date_precision": "day",
+    "run_time_and_timezone": null,
+    "producer_repository": "https://github.com/CultureBotAI/auto-term-catalog",
+    "producer_commit": "3fe168541e187316e6dee7ee2c7960a208d32101",
+    "producer_commit_role": "first committed end-to-end implementation verified to reproduce the baseline output byte-for-byte",
+    "artifact_first_commit": "c7ee87135cc1c1aea041c332bb16806c01b83eed",
+    "output": {
+      "path": "data/chemical_utilization_ijsem_first1000_cborg_gpt41mini_merged_kg_grounded_20260824.tsv",
+      "media_type": "text/tab-separated-values; charset=utf-8",
+      "sha256": "7facfae0aa2eb15c900bdaffc074efa1734f9f3a94a47adc05c08f02a83cb516",
+      "logical_data_rows": 14982,
+      "columns": 28,
+      "documents": 1000,
+      "distinct_pmids": 1000
+    }
+  },
+  "abstract_corpus": {
+    "source": "Europe PMC REST API",
+    "source_documentation": "https://europepmc.org/RestfulWebService",
+    "endpoint": "https://www.ebi.ac.uk/europepmc/webservices/rest/search",
+    "query_per_record": "EXT_ID:{pmid} AND SRC:MED",
+    "request_parameters": {
+      "format": "json",
+      "resultType": "core",
+      "pageSize": "1"
+    },
+    "manifest": "config/ijsem_first1000_manifest.tsv",
+    "manifest_sha256": "39460c40696513c7fa987484f29c76e229827cfd1dba84c383e2fbb20b8977c6",
+    "selection": "the first 1000 bytewise-sorted source filenames in the reviewed IJSEM corpus",
+    "content_version": "the PMID, filename, and abstract SHA-256 values committed in the manifest",
+    "normalization": "HTML entity unescape, removal of markup tags, whitespace collapse, and outer trim",
+    "retrieval_date": null
+  },
+  "knowledge_graph": {
+    "project": "KG-Microbe",
+    "project_repository": "https://github.com/Knowledge-Graph-Hub/kg-microbe",
+    "canonical_distribution_documentation": "https://github.com/Knowledge-Graph-Hub/kg-microbe#build-and-release-artifacts",
+    "recorded_baseline_archive_url": "https://drive.usercontent.google.com/download?id=1SwkuuJjwVfNJk086pMvcZIy14cvJ8lNm&export=download",
+    "archive_acquired_at": "2026-01-15T21:01:17Z",
+    "archive_sha256": "8424fac29b07c4bd15a6d2194a43995433c459eb687338176719f08aacd1b917",
+    "archive_version": "no release tag or build commit was embedded; the checksums below are the authoritative baseline version",
+    "nodes": {
+      "filename": "merged-kg_nodes.tsv",
+      "sha256": "fd3d590cd177d2269ac23bc5272004ec0b7ed5e640ff2a603870444457546b8e",
+      "bytes": 212932944,
+      "logical_data_rows": 1546598
+    },
+    "edges": {
+      "filename": "merged-kg_edges.tsv",
+      "sha256": "1c6070a261318cd8e95b3dad721905747d7b8b059c0f9b3ad01f4f47dbf70552",
+      "bytes": 1085378218,
+      "logical_data_rows": 6854490
+    }
+  },
+  "ontology": {
+    "name": "METPO",
+    "project_repository": "https://github.com/berkeleybop/metpo",
+    "declared_version": "2026-06-12",
+    "version_iri": "https://w3id.org/metpo/releases/2026-06-12/metpo.owl",
+    "artifact_revision_commit": "07a05248b6f9080d7bb07dd7edc06c12520fb7de",
+    "artifact_url": "https://raw.githubusercontent.com/berkeleybop/metpo/07a05248b6f9080d7bb07dd7edc06c12520fb7de/metpo.owl",
+    "sha256": "8b6f8fe0510a698579e532658c8ace05da2550093365df9ca83feb0741778415",
+    "bytes": 1115523,
+    "version_note": "This post-release artifact revision retains ontology version 2026-06-12 and exactly matches the baseline; the file at tag 2026-06-12 does not have this checksum."
+  },
+  "extraction": {
+    "baseline_label": "cborg_gpt41mini",
+    "ontogpt_version": "1.0.16",
+    "pyyaml_version": "6.0.3",
+    "template": "src/templates/chemical_utilization_no_grounding.yaml",
+    "template_sha256": "4fb6175377070c13739f3f7d64d3849aa9148e69f2c971bac1b25ea31f9e65ef",
+    "model_endpoint": "https://api.cborg.lbl.gov",
+    "model_provider": "openai",
+    "requested_model": "openai/gpt-4.1-mini",
+    "backend_snapshot": null,
+    "backend_snapshot_note": "The request used the CBORG model route above; response metadata sufficient to prove a dated backend snapshot was not retained.",
+    "temperature": 0.0,
+    "batch_size": 100,
+    "document_limit": 1000,
+    "output_format": "yaml",
+    "ontogpt_grounding": false
+  },
+  "grounding_and_export": {
+    "strict_metpo_relationships": true,
+    "max_kg_edge_evidence_per_grounded_id": 5,
+    "mention_context_window_characters_per_side": 50,
+    "expand_growth_conditions": true,
+    "entity_matching": "Unicode NFKC, case-folded, whitespace-normalized exact primary-label or synonym match",
+    "deterministic_environment": {
+      "LC_ALL": "C",
+      "PYTHONHASHSEED": "0",
+      "TZ": "UTC"
+    }
+  }
+}

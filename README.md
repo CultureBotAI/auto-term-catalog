@@ -9,6 +9,13 @@ The checked-in 1,000-abstract result is
 Its SHA-256 digest is recorded in
 [`config/ijsem_first1000_artifacts.sha256`](config/ijsem_first1000_artifacts.sha256).
 
+The reviewed baseline is named **`cborg_gpt41mini`** and is dated
+**2026-08-24**. Its input locations and checksums, model and extraction
+parameters, output schema, and producer/run provenance are documented in
+[`docs/ijsem_first1000_baseline.md`](docs/ijsem_first1000_baseline.md) and in
+machine-readable
+[`config/ijsem_first1000_baseline_provenance.json`](config/ijsem_first1000_baseline_provenance.json).
+
 ## Reproducible IJSEM pipeline
 
 The full path from abstracts to the grounded table is:
